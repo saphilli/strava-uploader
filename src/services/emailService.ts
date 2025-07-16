@@ -23,24 +23,34 @@ export class EmailService {
     }
   }
 
-  private async initializeGmail(): Promise<void> {
+  private async initializeGmail(): Promise<void>
+  {
     const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
     const TOKEN_PATH = path.join(process.cwd(), 'token.json');
     const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 
     try {
-      let auth;
+      if (!fs.existsSync(CREDENTIALS_PATH))
+      {
+        throw new Error('credentials.json file not found. Please download it from Google Cloud Console.');
+      }
       
-      if (fs.existsSync(TOKEN_PATH)) {
+      const credentialsData = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf-8'));
+      const { clientId, clientSecret, redirectUris } = credentialsData.installed || credentialsData.web;
+
+      if (!credentialsData || !clientId || clientSecret || !redirectUris) {
+        throw new Error('Invalid or incomplete credentials.json file. Ensure client_id, client_secret, and redirect_uris are present.')
+      }
+
+      let auth;
+      if (fs.existsSync(TOKEN_PATH)) 
+      {
         const tokenData = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-        const oauth2Client = new google.auth.OAuth2();
+        const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUris);
         oauth2Client.setCredentials(tokenData);
         auth = oauth2Client;
-      } else {
-        if (!fs.existsSync(CREDENTIALS_PATH)) {
-          throw new Error('credentials.json file not found. Please download it from Google Cloud Console.');
-        }
-        
+      } 
+      else {
         auth = await authenticate({
           scopes: SCOPES,
           keyfilePath: CREDENTIALS_PATH,
@@ -49,8 +59,13 @@ export class EmailService {
         fs.writeFileSync(TOKEN_PATH, JSON.stringify(auth.credentials));
       }
 
+      if (auth && auth.gaxios) {
+        auth.gaxios.defaults.errorRedactor = false;
+      }
+
       this.gmail = google.gmail({ version: 'v1', auth });
-    } catch (error) {
+    } catch (error)
+    {
       logger.error('Failed to initialize Gmail OAuth:', error);
       throw error;
     }
