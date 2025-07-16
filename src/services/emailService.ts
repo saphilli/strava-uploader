@@ -124,6 +124,10 @@ export class EmailService {
   }
 
   private async getGmailMessages(filter: EmailFilter): Promise<EmailMessage[]> {
+    if (!this.gmail) {
+      throw new Error('Gmail service not initialized. Call connect() first.');
+    }
+    
     const query = `from:${filter.fromDomain} ${filter.hasAttachments ? 'has:attachment' : ''}`;
     
     const response = await this.gmail.users.messages.list({
