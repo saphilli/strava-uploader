@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { gmail_v1 } from 'googleapis/build/src/apis/gmail/v1';
 import Imap from 'imap';
 import { authenticate } from '@google-cloud/local-auth';
 import fs from 'fs';
@@ -8,7 +9,7 @@ import logger from '../utils/logger';
 
 export class EmailService {
   private config: EmailConfig;
-  private gmail?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  private gmail?: any; 
   private imap?: Imap;
 
   constructor(config: EmailConfig) {
@@ -149,8 +150,7 @@ export class EmailService {
       throw new Error('Gmail service not initialized. Call connect() first.');
     }
     
-    const query = `from:${filter.fromDomain} ${filter.hasAttachments ? 'has:attachment' : ''}`;
-    
+    const query = `from:${filter.fromDomain}`;
     const response = await this.gmail.users.messages.list({
       userId: 'me',
       q: query,
@@ -176,21 +176,21 @@ export class EmailService {
     return messages;
   }
 
-  private parseGmailMessage(message: any): EmailMessage { // eslint-disable-line @typescript-eslint/no-explicit-any
-    const headers = message.payload.headers;
-    const from = headers.find((h: any) => h.name === 'From')?.value || ''; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const subject = headers.find((h: any) => h.name === 'Subject')?.value || ''; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const date = new Date(headers.find((h: any) => h.name === 'Date')?.value || ''); // eslint-disable-line @typescript-eslint/no-explicit-any
+  private parseGmailMessage(message: gmail_v1.Schema$Message): EmailMessage {
+    const headers = message.payload?.headers || [];
+    const from = headers.find((h: any) => h.name === 'From')?.value || ''; 
+    const subject = headers.find((h: any) => h.name === 'Subject')?.value || ''; 
+    const date = new Date(headers.find((h: any) => h.name === 'Date')?.value || ''); 
 
     const attachments: EmailAttachment[] = [];
     
-    if (message.payload.parts) {
+    if (message.payload?.parts) {
       for (const part of message.payload.parts) {
-        if (part.filename && part.body.attachmentId) {
+        if (part.filename && part.body?.attachmentId) {
           attachments.push({
             filename: part.filename,
-            contentType: part.mimeType,
-            size: part.body.size,
+            contentType: part.mimeType || 'application/octet-stream',
+            size: part.body.size || 0,
             data: Buffer.from('')
           });
         }
@@ -198,7 +198,7 @@ export class EmailService {
     }
 
     return {
-      id: message.id,
+      id: message.id || '',
       from,
       subject,
       date,

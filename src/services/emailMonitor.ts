@@ -14,7 +14,7 @@ export class EmailMonitor {
     this.emailService = new EmailService(config);
     this.filter = {
       fromDomain: config.domain,
-      hasAttachments: true
+      hasAttachments: false
     };
   }
   

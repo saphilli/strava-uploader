@@ -1,5 +1,5 @@
 import { EmailScheduler } from '../services/scheduler';
-import { EmailConfig } from '../types/email';
+import { EmailConfig, EmailProvider } from '../types/email';
 
 // Mock dependencies
 jest.mock('../services/emailMonitor');
@@ -11,7 +11,7 @@ describe('EmailScheduler', () => {
 
   beforeEach(() => {
     mockConfig = {
-      provider: 'gmail',
+      provider: EmailProvider.Gmail,
       email: 'test@gmail.com',
       domain: 'mywellness.com'
     };
