@@ -39,7 +39,7 @@ describe('EmailMonitor', () => {
     it('should set up filter with correct domain', () => {
       expect(emailMonitor['filter']).toEqual({
         fromDomain: 'mywellness.com',
-        hasAttachments: true
+        hasAttachments: false
       });
     });
   });
@@ -134,7 +134,7 @@ describe('EmailMonitor', () => {
       expect(result).toEqual([]);
       expect(mockEmailService.getMessages).toHaveBeenCalledWith({
         fromDomain: 'mywellness.com',
-        hasAttachments: true
+        hasAttachments: false
       });
     });
 
