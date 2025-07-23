@@ -1,5 +1,10 @@
+export enum EmailProvider {
+  Gmail = 'gmail',
+  Outlook = 'outlook'
+}
+
 export interface EmailConfig {
-  provider: 'gmail' | 'outlook';
+  provider: EmailProvider;
   domain: string;
   email: string;
   auth?: {
