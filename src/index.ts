@@ -2,15 +2,18 @@ import dotenv from 'dotenv';
 import { EmailScheduler } from './services/scheduler';
 import { EmailConfig } from './types/email';
 import logger from './utils/logger';
+import { EmailProvider } from './types/email';
 
 dotenv.config();
 
-function createEmailConfig(): EmailConfig {
-  const provider = process.env.EMAIL_PROVIDER as 'gmail' | 'outlook';
-  
-  if (!provider || !['gmail', 'outlook'].includes(provider)) {
-    throw new Error('EMAIL_PROVIDER must be either "gmail" or "outlook"');
+export function createEmailConfig(): EmailConfig {
+  const providerStr = process.env.EMAIL_PROVIDER;
+  const validProviders = Object.values(EmailProvider);
+
+  if (!providerStr || !validProviders.includes(providerStr as EmailProvider)) {
+    throw new Error(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
   }
+  const provider = providerStr as EmailProvider;
 
   const config: EmailConfig = {
     provider,
@@ -18,7 +21,7 @@ function createEmailConfig(): EmailConfig {
     domain: process.env.TECHNOGYM_DOMAIN || 'mywellness.com'
   };
 
-  if (provider === 'outlook') {
+  if (provider === EmailProvider.Outlook) {
     config.auth = {
       clientId: process.env.OUTLOOK_CLIENT_ID || '',
       clientSecret: process.env.OUTLOOK_CLIENT_SECRET || '',
@@ -37,7 +40,7 @@ function createEmailConfig(): EmailConfig {
   return config;
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   try {
     logger.info('Starting Strava Uploader Email Monitor');
     
@@ -46,7 +49,7 @@ async function main(): Promise<void> {
     
     const scheduler = new EmailScheduler(config, intervalMinutes);
     
-    const mode = process.argv[2] || 'scheduled';
+    const mode = process.env.MODE || 'scheduled';
     
     switch (mode) {
       case 'scheduled':
@@ -58,7 +61,6 @@ async function main(): Promise<void> {
       case 'once':
         await scheduler.runOnce();
         process.exit(0);
-        break;
       default:
         logger.error('Invalid mode. Use: scheduled, continuous, or once');
         process.exit(1);
