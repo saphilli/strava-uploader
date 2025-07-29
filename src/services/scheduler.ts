@@ -1,6 +1,5 @@
 import * as cron from 'node-cron';
 import { EmailMonitor } from './emailMonitor';
-import { EmailConfig } from '../types/email';
 import logger from '../utils/logger';
 
 export class EmailScheduler {
@@ -8,8 +7,8 @@ export class EmailScheduler {
   private cronJob?: cron.ScheduledTask;
   private intervalMinutes: number;
 
-  constructor(config: EmailConfig, intervalMinutes: number = 5) {
-    this.emailMonitor = new EmailMonitor(config);
+  constructor(intervalMinutes: number = 5, emailMonitor: EmailMonitor) {
+    this.emailMonitor = emailMonitor;
     this.intervalMinutes = intervalMinutes;
   }
 

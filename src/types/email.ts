@@ -19,18 +19,9 @@ export interface EmailMessage {
   from: string;
   subject: string;
   date: Date;
-  hasAttachments: boolean;
-  attachments: EmailAttachment[];
-}
-
-export interface EmailAttachment {
-  filename: string;
-  contentType: string;
-  size: number;
-  data: Buffer;
+  downloadLinks: string[];
 }
 
 export interface EmailFilter {
   fromDomain: string;
-  hasAttachments: boolean;
 }

@@ -6,7 +6,7 @@ App that automates uploading of workouts to Strava from Technogym treadmills
 - **Email Monitoring Service**: Monitors email inbox for Technogym workout data
 - **Multi-provider Support**: Works with Gmail and Outlook via IMAP/OAuth
 - **Automatic Filtering**: Filters emails from technogym.com domain
-- **Attachment Processing**: Detects and processes workout file attachments
+- **Workout File Processing**: Downloads .tcx files and other workout file formats.
 - **Flexible Scheduling**: Supports scheduled, continuous, or one-time monitoring
 - **Comprehensive Logging**: Logs all email processing activities
 

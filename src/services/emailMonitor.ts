@@ -1,20 +1,18 @@
-import { EmailService } from './emailService';
+import { IEmailService } from './emailService';
 import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
 import logger from '../utils/logger';
 
 export class EmailMonitor {
-  private emailService: EmailService;
+  private emailService: IEmailService;
   private filter: EmailFilter;
   private isRunning = false;
   private technogymDomain= '';
   
-  
-  constructor(config: EmailConfig) {
+  constructor(config: EmailConfig, emailService: IEmailService) {
     this.technogymDomain = config.domain;
-    this.emailService = new EmailService(config);
+    this.emailService = emailService;
     this.filter = {
-      fromDomain: config.domain,
-      hasAttachments: false
+      fromDomain: config.domain
     };
   }
   
@@ -58,21 +56,17 @@ export class EmailMonitor {
       logger.info('Checking for new emails from Technogym...');
       const messages = await this.emailService.getMessages(this.filter);
       
-      const technogymMessages = messages.filter(msg => 
-        this.isTechnogymEmail(msg.from) && msg.hasAttachments
-        );
-        
-        if (technogymMessages.length > 0) {
-          logger.info(`Found ${technogymMessages.length} new Technogym emails with attachments`);
+        if (messages.length > 0) {
+          logger.info(`Found ${messages.length} new Technogym email.`);
           
-          for (const message of technogymMessages) {
+          for (const message of messages) {
             this.logEmailDetails(message);
           }
         } else {
-          logger.info('No new Technogym emails with attachments found');
+          logger.info('No new Technogym emails found');
         }
         
-        return technogymMessages;
+        return messages;
       } catch (error) {
         logger.error('Error checking for new emails:', error);
         throw error;
@@ -81,28 +75,8 @@ export class EmailMonitor {
   
     async processWorkoutEmail(message: EmailMessage): Promise<void> {
       logger.info(`Processing workout email: ${message.subject}`);
-      
-      for (const attachment of message.attachments) {
-        if (this.isWorkoutFile(attachment.filename)) {
-          logger.info(`Found workout file: ${attachment.filename}`);
-          
-          try {
-            const attachmentData = await this.emailService.downloadAttachment(
-              message.id, 
-              attachment.filename
-            );
-            
-            logger.info(`Downloaded workout file: ${attachment.filename} (${attachmentData.length} bytes)`);
-            
-          } catch (error) {
-            logger.error(`Failed to download attachment ${attachment.filename}:`, error);
-          }
-        }
-      }
-    }
-    
-    private isTechnogymEmail(fromAddress: string): boolean {
-      return fromAddress.toLowerCase().includes(this.technogymDomain);
+
+      const workoutFile = await this.emailService.downloadWorkoutFile(message.downloadLinks[0], message.id);
     }
     
     private logEmailDetails(message: EmailMessage): void {
@@ -111,12 +85,7 @@ export class EmailMonitor {
       from: message.from,
       subject: message.subject,
       date: message.date,
-      attachmentCount: message.attachments.length,
-      attachments: message.attachments.map(att => ({
-        filename: att.filename,
-        contentType: att.contentType,
-        size: att.size
-      }))
+      downloadLinks: message.downloadLinks
     });
   }
 
