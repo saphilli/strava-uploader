@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>HTML Template</title>
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <meta content="Webflow" name="generator">
+  <style>@font-face {
+    font-family: 'webflow-icons';
+    src: url("data:application/x-font-ttf;charset=utf-8;base64,AAEAAAALAIAAAREAA...") format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+    
+    .text-small {
+      color: rgba(255, 255, 255, .5);
+      letter-spacing: 0;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      text-decoration: none;
+    }
+    
+    .text-small.footer-2-subtext {
+      text-align: center;
+      font-family: Acuminpro, sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1.4em;
+    }
+    
+    .dem-copy-title {
+      color: #1b1b1b;
+      text-align: center;
+      font-family: Acuminprocondensed, sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1.2em;
+    }
+    
+    ._16-spacer {
+      width: 16px;
+      height: 16px;
+    }
+    
+    ._32-spacer {
+      width: 32px;
+      height: 32px;
+      flex: none;
+    }
+    
+    .dem-button {
+      color: #fff;
+      text-align: center;
+      text-transform: none;
+      object-fit: fill;
+      background-color: #1b1b1b;
+      border: 2px solid rgba(255, 255, 255, .2);
+      border-radius: 12px;
+      padding: 20px 32px 18px;
+      font-family: Acuminpro, sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1em;
+      overflow: visible;
+      display: inline-block;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    input.dem-button {
+      -webkit-appearance: button;
+    }
+    
+    .social-link-item {
+      width: 48px;
+      height: 48px;
+      background-color: #2c2c2e;
+      border: 1px #2c2c2e;
+      border-radius: 12px;
+      justify-content: center;
+      align-items: center;
+      margin-left: 12px;
+      margin-right: 12px;
+      display: flex;
+    }
+    
+    .social-link-item:hover {
+      opacity: 1;
+      background-color: #2c2c2e;
+      border: 1px #6f6f6f;
+      border-radius: 8px;
+    }
+    
+    .dem-wrap {
+      width: auto;
+      height: 100%;
+      max-width: 0;
+      min-width: 640px;
+    }
+    
+    .dem-copy-date {
+      color: rgba(27, 27, 27, .8);
+      text-transform: uppercase;
+      font-family: Acuminpro, sans-serif;
+      font-weight: 400;
+    }
+    
+    .dem-wrap-body {
+      background-color: #f3f3f3;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 64px 128px;
+      display: flex;
+    }
+    
+    .dem-section {
+      width: 100vw;
+      height: 100%;
+      justify-content: center;
+      padding: 64px;
+      display: flex;
+    }
+    
+    .dem-social-wrap {
+      grid-column-gap: 0px;
+      grid-row-gap: 0px;
+      grid-template-rows: auto auto;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-columns: 1fr;
+      justify-content: center;
+      align-items: center;
+      margin-left: 0;
+      margin-right: 0;
+      padding-top: 64px;
+      padding-bottom: 64px;
+      display: flex;
+    }
+    
+    .dem-grid {
+      grid-row-gap: 0px;
+      grid-template-columns: 1fr;
+    }
+    
+    .dem-body {
+      background-color: #1b1b1b;
+    }
+    
+    @media screen and (max-width: 991px) {
+      .text-small.footer-2-subtext {
+        text-align: center;
+        font-size: 10px;
+        line-height: 1.4em;
+      }
+    
+      .dem-wrap {
+        min-width: 100%;
+      }
+    
+      .dem-section {
+        padding: 32px;
+      }
+    }
+    
+    @media screen and (max-width: 767px) {
+      .text-small.footer-2-subtext {
+        text-align: center;
+        font-size: 9px;
+      }
+    
+      ._32-spacer {
+        height: 32px;
+        display: block;
+        overflow: visible;
+      }
+    
+      .dem-wrap-body {
+        padding-left: 64px;
+        padding-right: 64px;
+      }
+    }
+    
+    @media screen and (max-width: 479px) {
+      .text-small.footer-2-subtext {
+        text-align: center;
+        font-size: 11px;
+      }
+    
+      ._32-spacer {
+        height: 32px;
+      }
+    
+      .dem-wrap-body {
+        padding: 32px;
+      }
+    
+      .dem-section {
+        padding: 16px 16px 32px;
+      }
+    
+      .dem-social-wrap {
+        padding-top: 32px;
+        padding-bottom: 32px;
+      }
+    }
+    
+    #equipImage {
+      grid-area: span 1 / span 1 / span 1 / span 1;
+      max-width: 100%;
+    }
+    
+    #equipImage {
+      grid-area: span 1 / span 1 / span 1 / span 1;
+      justify-self: auto;
+    }
+    
+    
+    @font-face {
+      font-family: 'Acuminpro';
+      src: url('../fonts/AcuminPro-Regular.otf') format('opentype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Acuminprocondensed';
+      src: url('../fonts/AcuminProCondensed-Black.otf') format('opentype');
+      font-weight: 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Acuminprocondensed';
+      src: url('../fonts/AcuminProCondensed-SemiBold.otf') format('opentype');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+</head>
+<body class="dem-body">
+  <div class="dem-section">
+    <div class="dem-wrap">
+      <div class="dem-grid">
+        <img src="https://cdnmedia.mywellness.com/email_resources/equipment_standard.png" id="equipImage" sizes="(max-width: 479px) 93vw, (max-width: 767px) 92vw, (max-width: 991px) 94vw, 640px" alt="" class="dem-hero-image">
+        <div id="equipImage" class="dem-wrap-body">
+          <div class="dem-copy-date">21 JUL 2025 • A</div>
+          <div class="_16-spacer"></div>
+          <div class="dem-copy-title">Here is the file of your workout on Run Artis</div>
+          <div class="_32-spacer"></div>
+          <a href="https://93cprcxn.r.eu-west-1.awstrack.me/L0/https:%2F%2Fmywellness-cloud-private-media.s3.eu-west-1.amazonaws.com%2Findoor_tcx%2F63c00309-6c08-483a-a4d3-dc8c36885dbb%2F687e03d48257aea6b40386a2.tcx%3FX-Amz-Expires=14400%26X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%252F%252F%252F%252F%252F%252F%252F%252F%252FwEaCWV1LXdlc3QtMSJHMEUCICbmRgzqLMjTmd1kxreHSsI%252FnyJhoSiN%252Bq%252B8rXNs6QWWAiEAwkk%252BfopklU8dHKHA6lJ9urpj3RtS7HAXHXEjBQPPGlgq%252BgMI0P%252F%252F%252F%252F%252F%252F%252F%252F%252F%252F%252FARAFGgw5MzE5MDA2MjEzNDciDCkfCIv9oNuMVY%252FKHyrOA3Q52jLyJwlShNne%252FIkoDzqUBp0GdCCAtcQWVmwteITFSXlDbRPGyNiA7tBuzfFevc88UrN%252F3zzkYu%252FdKnKgOvFns2837QbebV%252FzqImZxfHTZxRXEsprOe6KlL9rD2pBSd6EWnFdW4Xj6tyFMOUcsI%252Bbo36a3P%252Fz9oQl3ISIeAmZWoiGeYSyc%252FcjdXsIfXmwNbXb49eKLc1aaW61oik0VH9KAoTcNVNR2i8r2QdGa4d0PGNBLxKs%252Bo1D0ewX0syOhDvG9KITcEWVan0TITPSq2fHJdFdTD0EpQUCJfTcKOMU0tTy72B3cQY4Esy031Z%252BW1%252FSGfJgE6RFdcxU42FOrQYbo3Nz7qYrcopBLPx7%252B22JRWKyuSfhUPAD6Nv461Ii9VFcza6V11Qo5AxUkF9QFr5ZpHKGWlvHDwpbY0YSrFCDOdwYV95nGCOp2Gpzrhb8g5QdXQ1ttvnXRbVxrbMQDko5L9%252B%252FZEB7rzoniA1Ss2XHB%252Bt5gVdvhIBHqxmLXcg1pW8EgDB%252BDZXPi%252F10Fot5df58sPL01GvewhySNEny9n9CMv0nK8wjLRa3KkglsFe3hhuVfEqn29MarXy3JQFC1pt3gN3WNNerRm3dCemtRTCEy%252FfDBjqlARKM8cA%252FJPf30xwCAuTlA6%252F9APlpV3lcBiUEYMA%252F1QNAbicGYxXq4oI8XlKU92jfwQF9dsIRCgJqfx7hkXkh61XSbQWHtZZ0%252F8DQjPYnxPQysYPL1P4Eo%252FmLqiR23m3nKlXvFRpHJnHXnJ2eLBNMmfM6E2JZuE4FZHhWaLJUaaQBtToGHB1JvurqezDGziXjXe6%252BMOmMoMticYog5sUj2mrl2YjE6Q%253D%253D%26X-Amz-Algorithm=AWS4-HMAC-SHA256%26X-Amz-Credential=ASIA5R6M3AIRRMCUT3AH%252F20250721%252Feu-west-1%252Fs3%252Faws4_request%26X-Amz-Date=20250721T090953Z%26X-Amz-SignedHeaders=host%26X-Amz-Signature=7f5786e94cb6fb66f2a8cb9991216c9da008a37d2dfa8b0a21daa10bcb9725b7/1/010201982c3f2a75-bdb796a0-f3d9-4c6d-98cc-7c54e8b749ae-000000/9CMYDbNWvosHgGJ3mEYclhN_9s8=435" class="dem-button">Download Now</a>
+        </div>
+        <div class="dem-social-wrap">
+          <a href="https://93cprcxn.r.eu-west-1.awstrack.me/L0/https:%2F%2Fwww.linkedin.com%2Fcompany%2Ftechnogym/1/010201982c3f2a75-bdb796a0-f3d9-4c6d-98cc-7c54e8b749ae-000000/oyHLFhVoqYGPX4gPUK_ico9U22A=435" target="_blank" class="social-link-item"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjRweCIgaGVpZ2h0PSIyNHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8dGl0bGU+bGlua2VkaW4taWNvbjwvdGl0bGU+CiAgICA8ZyBpZD0ibGlua2VkaW4taWNvbiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPHBhdGggZD0iTTcuNSw5LjUgTDcuNSwxOS41IEM3LjUsMTkuNzc2MTQyNCA3LjI3NjE0MjM3LDIwIDcsMjAgTDQuNSwyMCBDNC4yMjM4NTc2MywyMCA0LDE5Ljc3NjE0MjQgNCwxOS41IEw0LDkuNSBDNCw5LjIyMzg1NzYzIDQuMjIzODU3NjMsOSA0LjUsOSBMNyw5IEM3LjI3NjE0MjM3LDkgNy41LDkuMjIzODU3NjMgNy41LDkuNSBaIE0yMSwxMy40MSBDMjEuMDM0NDY4NiwxMS4yNDQ4OTg2IDE5LjU1NzQyMTUsOS4zNDc2MjExNiAxNy40NSw4Ljg1IEMxNi4wMzc3NDYzLDguNTQ1OTAyNjcgMTQuNTY1NjczNyw4Ljk0NDY2NjY1IDEzLjUsOS45MiBMMTMuNSw5LjUgQzEzLjUsOS4yMjM4NTc2MyAxMy4yNzYxNDI0LDkgMTMsOSBMMTAuNSw5IEMxMC4yMjM4NTc2LDkgMTAsOS4yMjM4NTc2MyAxMCw5LjUgTDEwLDE5LjUgQzEwLDE5Ljc3NjE0MjQgMTAuMjIzODU3NiwyMCAxMC41LDIwIEwxMywyMCBDMTMuMjc2MTQyNCwyMCAxMy41LDE5Ljc3NjE0MjQgMTMuNSwxOS41IEwxMy41LDEzLjg2IEMxMy40NzUzMDU3LDEyLjg1NTcxNTEgMTQuMTc1MjUyOCwxMS45Nzg2NzI5IDE1LjE2LDExLjc4IEMxNS43NDYzNTQ1LDExLjY3ODc4MjMgMTYuMzQ3MzMwNCwxMS44NDM5MDQyIDE2Ljc5OTY1MzYsMTIuMjMwNTA1MyBDMTcuMjUxOTc2OCwxMi42MTcxMDYzIDE3LjUwODY3MjEsMTMuMTg1MDM2NiAxNy41LDEzLjc4IEwxNy41LDE5LjUgQzE3LjUsMTkuNzc2MTQyNCAxNy43MjM4NTc2LDIwIDE4LDIwIEwyMC41LDIwIEMyMC43NzYxNDI0LDIwIDIxLDE5Ljc3NjE0MjQgMjEsMTkuNSBMMjEsMTMuNDEgWiBNNS41LDMgQzQuMzk1NDMwNSwzIDMuNSwzLjg5NTQzMDUgMy41LDUgQzMuNSw2LjEwNDU2OTUgNC4zOTU0MzA1LDcgNS41LDcgQzYuNjA0NTY5NSw3IDcuNSw2LjEwNDU2OTUgNy41LDUgQzcuNSw0LjQ2OTU2NzAyIDcuMjg5Mjg2MzIsNC4wMzk2MDg1MTkgNi45MTQyMTM1NiwzLjU4NTc4NjQ0IEM2LjUzOTE0MDgxLDMuMjEwNzEzNjggNi4wMzA0MzI5OCwzIDUuNSwzIFoiIGlkPSJJY29uLWNvbG9yIiBmaWxsPSIjRkZGRkZGIiBmaWxsLXJ1bGU9Im5vbnplcm8iPjwvcGF0aD4KICAgIDwvZz4KPC9zdmc+" alt=""></a>
+          <a href="https://93cprcxn.r.eu-west-1.awstrack.me/L0/https:%2F%2Fwww.facebook.com%2FTechnogym%2F/1/010201982c3f2a75-bdb796a0-f3d9-4c6d-98cc-7c54e8b749ae-000000/Uoo-L9NQBCm5qT2WkTXnuVYR1LA=435" target="_blank" class="social-link-item"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjRweCIgaGVpZ2h0PSIyNHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8dGl0bGU+ZmFjZWJvb2staWNvbjwvdGl0bGU+CiAgICA8ZyBpZD0iZmFjZWJvb2staWNvbiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPHBhdGggZD0iTTE2LjUsNiBMMTMuNSw2IEMxMi45NDc3MTUzLDYgMTIuNSw2LjQ0NzcxNTI1IDEyLjUsNyBMMTIuNSwxMCBMMTYuNSwxMCBDMTYuNjEzNzM2OSw5Ljk5NzQ3NjUxIDE2LjcyMTYwNDQsMTAuMDUwMzkgMTYuNzg5MjI1MiwxMC4xNDE4NzcgQzE2Ljg1Njg0NjEsMTAuMjMzMzY0IDE2Ljg3NTc4MjcsMTAuMzUyMDA5IDE2Ljg0LDEwLjQ2IEwxNi4xLDEyLjY2IEMxNi4wMzE4MDY0LDEyLjg2MTkxODggMTUuODQzMTE3NSwxMi45OTg0MTcyIDE1LjYzLDEzIEwxMi41LDEzIEwxMi41LDIwLjUgQzEyLjUsMjAuNzc2MTQyNCAxMi4yNzYxNDI0LDIxIDEyLDIxIEw5LjUsMjEgQzkuMjIzODU3NjMsMjEgOSwyMC43NzYxNDI0IDksMjAuNSBMOSwxMyBMNy41LDEzIEM3LjIyMzg1NzYzLDEzIDcsMTIuNzc2MTQyNCA3LDEyLjUgTDcsMTAuNSBDNywxMC4yMjM4NTc2IDcuMjIzODU3NjMsMTAgNy41LDEwIEw5LDEwIEw5LDcgQzksNC43OTA4NjEgMTAuNzkwODYxLDMgMTMsMyBMMTYuNSwzIEMxNi43NzYxNDI0LDMgMTcsMy4yMjM4NTc2MyAxNywzLjUgTDE3LDUuNSBDMTcsNS43NzYxNDIzNyAxNi43NzYxNDI0LDYgMTYuNSw2IFoiIGlkPSJJY29uLWNvbG9yIiBmaWxsPSIjRkZGRkZGIiBmaWxsLXJ1bGU9Im5vbnplcm8iPjwvcGF0aD4KICAgIDwvZz4KPC9zdmc+" alt=""></a>
+          <a href="https://93cprcxn.r.eu-west-1.awstrack.me/L0/https:%2F%2Fwww.instagram.com%2Ftechnogym/1/010201982c3f2a75-bdb796a0-f3d9-4c6d-98cc-7c54e8b749ae-000000/51GtuG8TBCnEHHQh2BpHlKgVKNQ=435" target="_blank" class="social-link-item"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjRweCIgaGVpZ2h0PSIyNHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8dGl0bGU+aW5zdGFncmFtLWljb248L3RpdGxlPgogICAgPGcgaWQ9Imluc3RhZ3JhbS1pY29uIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgICAgICA8cGF0aCBkPSJNMTYsMyBMOCwzIEM1LjIzODU3NjI1LDMgMyw1LjIzODU3NjI1IDMsOCBMMywxNiBDMywxOC43NjE0MjM3IDUuMjM4NTc2MjUsMjEgOCwyMSBMMTYsMjEgQzE4Ljc2MTQyMzcsMjEgMjEsMTguNzYxNDIzNyAyMSwxNiBMMjEsOCBDMjEsNS4yMzg1NzYyNSAxOC43NjE0MjM3LDMgMTYsMyBaIE0xOS4yNSwxNiBDMTkuMjQ0NTA5NSwxNy43OTI2NDYzIDE3Ljc5MjY0NjMsMTkuMjQ0NTA5NSAxNiwxOS4yNSBMOCwxOS4yNSBDNi4yMDczNTM3NCwxOS4yNDQ1MDk1IDQuNzU1NDkwNTMsMTcuNzkyNjQ2MyA0Ljc1LDE2IEw0Ljc1LDggQzQuNzU1NDkwNTMsNi4yMDczNTM3NCA2LjIwNzM1Mzc0LDQuNzU1NDkwNTMgOCw0Ljc1IEwxNiw0Ljc1IEMxNy43OTI2NDYzLDQuNzU1NDkwNTMgMTkuMjQ0NTA5NSw2LjIwNzM1Mzc0IDE5LjI1LDggTDE5LjI1LDE2IFogTTE3Ljc1LDcuMjUgQzE3Ljc1LDcuODAyMjg0NzUgMTcuMzAyMjg0Nyw4LjI1IDE2Ljc1LDguMjUgQzE2LjE5NzcxNTMsOC4yNSAxNS43NSw3LjgwMjI4NDc1IDE1Ljc1LDcuMjUgQzE1Ljc1LDYuNjk3NzE1MjUgMTYuMTk3NzE1Myw2LjI1IDE2Ljc1LDYuMjUgQzE3LjMwMjI4NDcsNi4yNSAxNy43NSw2LjY5NzcxNTI1IDE3Ljc1LDcuMjUgWiBNMTIsNy40OTk5ODg4MiBDOS41MTQ3MTg2Myw3LjQ5OTk4ODgyIDcuNSw5LjUxNDcxODYzIDcuNSwxMiBDNy41LDE0LjQ4NTI4MTQgOS41MTQ3MTg2MywxNi41IDEyLDE2LjUgQzE0LjQ4NTI4MTQsMTYuNSAxNi41MDAwMTEyLDE0LjQ4NTI4MTQgMTYuNTAwMDExMiwxMiBDMTYuNTAyNjYyOSwxMC44MDU3MTE1IDE2LjAyOTQxMjIsOS42NTk1NzEwMiAxNS4xODQ5MjA2LDguODE1MDc5MzkgQzE0LjM0MDQyOSw3Ljk3MDU4Nzc2IDEzLjE5NDI4ODUsNy40OTczMzcxNCAxMiw3LjQ5OTk4ODgyIFogTTEyLDE0Ljc1IEMxMC40ODEyMTY5LDE0Ljc1IDkuMjUsMTMuNTE4NzgzMSA5LjI1LDEyIEM5LjI1LDEwLjQ4MTIxNjkgMTAuNDgxMjE2OSw5LjI1IDEyLDkuMjUgQzEzLjUxODc4MzEsOS4yNSAxNC43NSwxMC40ODEyMTY5IDE0Ljc1LDEyIEMxNC43NSwxMy41MTg3ODMxIDEzLjUxODc4MzEsMTQuNzUgMTIsMTQuNzUgWiIgaWQ9Ikljb24tY29sb3IiIGZpbGw9IiNGRkZGRkYiIGZpbGwtcnVsZT0ibm9uemVybyI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4=" alt=""></a>
+        </div>
+        <div class="text-small footer-2-subtext">Technogym S.p.A <br>Fiscal code and VAT: 06250230965 Certified Electronic Mail (PEC): technogym.amministrazione@legalmail.it Company registration number at the Forlì-Cesena Register, REA 315187 Fully paid up capital Euro 10.066.375,00 Siae License 201500000083<br></div>
+      </div>
+    </div>
+  </div>
+<img alt="" src="https://93cprcxn.r.eu-west-1.awstrack.me/I0/010201982c3f2a75-bdb796a0-f3d9-4c6d-98cc-7c54e8b749ae-000000/-y-KhcG28SqogWrQSkdP4IB0m2Y=435" style="display: none; width: 1px; height: 1px;">
+</body>
+</html>

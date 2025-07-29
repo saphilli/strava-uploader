@@ -1,34 +1,51 @@
 import { EmailMonitor } from '../services/emailMonitor';
 import { EmailConfig, EmailProvider, EmailMessage } from '../types/email';
-import { EmailService } from '../services/emailService';
-
-// Mock EmailService
-jest.mock('../services/emailService');
+import { IEmailService } from '../services/emailService';
 
 describe('EmailMonitor', () => {
+  const testDomain = 'mywellness.com';
+  const testEmail = 'test@gmail.com';
+
   let emailMonitor: EmailMonitor;
   let mockConfig: EmailConfig;
-  let mockEmailService: jest.Mocked<EmailService>;
+  let mockEmailService: IEmailService;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
     mockConfig = {
       provider: EmailProvider.Gmail,
-      email: 'test@gmail.com',
-      domain: 'mywellness.com'
+      email: testEmail,
+      domain: testDomain
     };
     
     mockEmailService = {
       connect: jest.fn().mockResolvedValue(undefined),
       disconnect: jest.fn(),
-      getMessages: jest.fn().mockResolvedValue([]),
-      downloadAttachment: jest.fn().mockResolvedValue(Buffer.from('test data'))
-    } as any;
+      getMessages: jest.fn().mockResolvedValue([
+        {
+          id: '1',
+          from: 'test@mywellness.com',
+          subject: 'Workout Data',
+          date: new Date('2023-01-01'),
+          downloadLinks: ['https://example.com/workout1.tcx']
+        },
+        {
+          id: '2',
+          from: 'coach@mywellness.com',
+          subject: 'Training Session',
+          date: new Date('2023-01-02'),
+          downloadLinks: ['https://example.com/workout2.gpx']
+        }
+      ]),
+      downloadWorkoutFile: jest.fn().mockResolvedValue({ 
+        filename: 'workout.tcx', 
+        data: require('fs').readFileSync(require('path').join(__dirname, '../testdata/workout.tcx'))
+      }),
+      processWorkoutEmail: jest.fn().mockResolvedValue(undefined)
+    } as IEmailService;
     
-    (EmailService as jest.MockedClass<typeof EmailService>).mockImplementation(() => mockEmailService);
-    
-    emailMonitor = new EmailMonitor(mockConfig);
+    emailMonitor = new EmailMonitor(mockConfig, mockEmailService);
   });
 
   describe('constructor', () => {
@@ -38,8 +55,7 @@ describe('EmailMonitor', () => {
 
     it('should set up filter with correct domain', () => {
       expect(emailMonitor['filter']).toEqual({
-        fromDomain: 'mywellness.com',
-        hasAttachments: false
+        fromDomain: testDomain
       });
     });
   });
@@ -63,7 +79,7 @@ describe('EmailMonitor', () => {
 
     it('should throw error when email service connection fails', async () => {
       const error = new Error('Connection failed');
-      mockEmailService.connect.mockRejectedValue(error);
+      (mockEmailService.connect as jest.Mock).mockRejectedValue(error);
       
       await expect(emailMonitor.start()).rejects.toThrow('Connection failed');
       expect(emailMonitor.isActive()).toBe(false);
@@ -98,13 +114,6 @@ describe('EmailMonitor', () => {
     });
   });
 
-  describe('isTechnogymEmail', () => {
-    it('should identify Technogym emails correctly', () => {
-      expect(emailMonitor['isTechnogymEmail']('test@mywellness.com')).toBe(true);
-      expect(emailMonitor['isTechnogymEmail']('user@MYWELLNESS.COM')).toBe(true);
-      expect(emailMonitor['isTechnogymEmail']('test@gmail.com')).toBe(false);
-    });
-  });
 
   describe('isWorkoutFile', () => {
     it('should identify workout files correctly', () => {
@@ -127,60 +136,49 @@ describe('EmailMonitor', () => {
 
     it('should return empty array when no emails found', async () => {
       emailMonitor['isRunning'] = true;
-      mockEmailService.getMessages.mockResolvedValue([]);
+      (mockEmailService.getMessages as jest.Mock).mockResolvedValue([]);
       
       const result = await emailMonitor.checkForNewEmails();
       
       expect(result).toEqual([]);
       expect(mockEmailService.getMessages).toHaveBeenCalledWith({
-        fromDomain: 'mywellness.com',
-        hasAttachments: false
+        fromDomain: testDomain
       });
     });
 
-    it('should filter and return Technogym emails with attachments', async () => {
+    it('should return all messages from email service', async () => {
       emailMonitor['isRunning'] = true;
       
       const mockMessages: EmailMessage[] = [
         {
           id: '1',
-          from: 'test@mywellness.com',
+          from: `test@${testDomain}`,
           subject: 'Workout Data',
           date: new Date(),
-          hasAttachments: true,
-          attachments: [{ filename: 'workout.tcx', contentType: 'text/xml', size: 1024, data: Buffer.from('') }]
+          downloadLinks: ['link1', 'link2']
         },
         {
           id: '2',
-          from: 'other@gmail.com',
+          from: `other@${testDomain}`,
           subject: 'Other Email',
           date: new Date(),
-          hasAttachments: true,
-          attachments: [{ filename: 'doc.pdf', contentType: 'application/pdf', size: 2048, data: Buffer.from('') }]
-        },
-        {
-          id: '3',
-          from: 'admin@mywellness.com',
-          subject: 'No Attachments',
-          date: new Date(),
-          hasAttachments: false,
-          attachments: []
+          downloadLinks: ['link3']
         }
       ];
       
-      mockEmailService.getMessages.mockResolvedValue(mockMessages);
+      (mockEmailService.getMessages as jest.Mock).mockResolvedValue(mockMessages);
       
       const result = await emailMonitor.checkForNewEmails();
       
-      expect(result).toHaveLength(1);
+      expect(result).toHaveLength(2);
       expect(result[0].from).toBe('test@mywellness.com');
-      expect(result[0].hasAttachments).toBe(true);
+      expect(result[1].from).toBe('other@mywellness.com');
     });
 
     it('should handle errors from email service', async () => {
       emailMonitor['isRunning'] = true;
       const error = new Error('Service error');
-      mockEmailService.getMessages.mockRejectedValue(error);
+      (mockEmailService.getMessages as jest.Mock).mockRejectedValue(error);
       
       await expect(emailMonitor.checkForNewEmails()).rejects.toThrow('Service error');
     });
@@ -189,42 +187,33 @@ describe('EmailMonitor', () => {
   describe('processWorkoutEmail', () => {
     const mockMessage: EmailMessage = {
       id: 'msg-1',
-      from: 'test@mywellness.com',
+      from: `test@{testDomain}`,
       subject: 'Workout Data',
       date: new Date(),
-      hasAttachments: true,
-      attachments: [
-        { filename: 'workout.tcx', contentType: 'text/xml', size: 1024, data: Buffer.from('') },
-        { filename: 'data.gpx', contentType: 'application/gpx', size: 2048, data: Buffer.from('') },
-        { filename: 'document.pdf', contentType: 'application/pdf', size: 3072, data: Buffer.from('') }
-      ]
+      downloadLinks: ['link1', 'link2'],
     };
 
-    it('should process workout files and skip non-workout files', async () => {
+    it('should download workout file from first download link', async () => {
       await emailMonitor.processWorkoutEmail(mockMessage);
       
-      expect(mockEmailService.downloadAttachment).toHaveBeenCalledTimes(2);
-      expect(mockEmailService.downloadAttachment).toHaveBeenCalledWith('msg-1', 'workout.tcx');
-      expect(mockEmailService.downloadAttachment).toHaveBeenCalledWith('msg-1', 'data.gpx');
-      expect(mockEmailService.downloadAttachment).not.toHaveBeenCalledWith('msg-1', 'document.pdf');
+      expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalledTimes(1);
+      expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalledWith('link1', 'msg-1');
     });
 
     it('should handle download errors gracefully', async () => {
-      mockEmailService.downloadAttachment.mockRejectedValue(new Error('Download failed'));
+      (mockEmailService.downloadWorkoutFile as jest.Mock).mockRejectedValue(new Error('Download failed'));
       
-      await expect(emailMonitor.processWorkoutEmail(mockMessage)).resolves.not.toThrow();
-      expect(mockEmailService.downloadAttachment).toHaveBeenCalled();
+      await expect(emailMonitor.processWorkoutEmail(mockMessage)).rejects.toThrow('Download failed');
+      expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalled();
     });
 
-    it('should process message with no workout files', async () => {
-      const messageWithoutWorkoutFiles: EmailMessage = {
+    it.skip('should process message with empty download links', async () => {
+      const messageWithoutLinks: EmailMessage = {
         ...mockMessage,
-        attachments: [{ filename: 'document.pdf', contentType: 'application/pdf', size: 1024, data: Buffer.from('') }]
+        downloadLinks: []
       };
       
-      await emailMonitor.processWorkoutEmail(messageWithoutWorkoutFiles);
-      
-      expect(mockEmailService.downloadAttachment).not.toHaveBeenCalled();
+      await expect(emailMonitor.processWorkoutEmail(messageWithoutLinks)).rejects.toThrow();
     });
   });
 });

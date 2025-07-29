@@ -1,3 +1,4 @@
+import { EmailMonitor } from '../services/emailMonitor';
 import { EmailScheduler } from '../services/scheduler';
 import { EmailProvider } from '../types/email';
 
@@ -197,8 +198,8 @@ describe('index.ts', () => {
       await main();
 
       expect(EmailScheduler).toHaveBeenCalledWith(
-        expect.any(Object),
-        10
+        10,
+        expect.any(EmailMonitor)
       );
     });
 
