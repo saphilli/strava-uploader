@@ -27,12 +27,12 @@ describe('index.ts', () => {
     
     // Create mock scheduler instance
     mockScheduler = {
-      startScheduledMonitoring: jest.fn().mockImplementation(() => Promise.resolve()),
-      startContinuousMonitoring: jest.fn().mockImplementation(() => Promise.resolve()),
+      startScheduledMonitoring: jest.fn().mockResolvedValue(undefined),
+      startContinuousMonitoring: jest.fn().mockResolvedValue(undefined),
       runOnce: jest.fn().mockResolvedValue(undefined),
-      stop: jest.fn().mockResolvedValue(undefined),
+      stop: jest.fn(),
       isRunning: jest.fn().mockReturnValue(false)
-    } as any;
+    } as unknown as jest.Mocked<EmailScheduler>;
     
     // Mock EmailScheduler constructor
     (EmailScheduler as jest.MockedClass<typeof EmailScheduler>).mockImplementation(() => {

@@ -1,6 +1,6 @@
 import { GmailService } from '../services/gmailService';
-import { BaseEmailService, IEmailService } from '../services/emailService';
-import { EmailConfig, EmailProvider, EmailFilter } from '../types/email';
+import { BaseEmailService } from '../services/emailService';
+import { EmailConfig, EmailProvider } from '../types/email';
 import https from 'https';
 import http from 'http';
 
@@ -40,8 +40,16 @@ describe('EmailService', () => {
 
   describe('BaseEmailService - downloadWorkoutFile', () => {
     let baseService: BaseEmailService;
-    let mockResponse: any;
-    let mockRequest: any;
+    let mockResponse: jest.Mocked<{
+      statusCode: number;
+      headers: Record<string, string>;
+      on: (event: string, callback: (data?: Buffer) => void) => void;
+    }>;
+    let mockRequest: jest.Mocked<{
+      on: (event: string, callback: (error?: Error) => void) => void;
+      setTimeout: (timeout: number, callback: () => void) => void;
+      destroy: () => void;
+    }>;
 
     beforeEach(() => {
       baseService = new GmailService(mockConfig);
@@ -66,12 +74,13 @@ describe('EmailService', () => {
       const testData = Buffer.from('test workout data');
       const url = 'https://example.com/workout.tcx';
       
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+        return mockRequest as any;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {
@@ -90,12 +99,13 @@ describe('EmailService', () => {
       const testData = Buffer.from('test workout data');
       const url = 'http://example.com/workout.tcx';
       
-      mockHttp.get.mockImplementation((url: any, callback: any) => {
+      mockHttp.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {
@@ -116,17 +126,18 @@ describe('EmailService', () => {
       const redirectUrl = 'https://cdn.example.com/workout.tcx';
       
       let callCount = 0;
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
         callCount++;
+        const callback = args[args.length - 1];
         const response = callCount === 1 
           ? { ...mockResponse, statusCode: 302, headers: { location: redirectUrl } }
           : { ...mockResponse, statusCode: 200 };
         
         setTimeout(() => callback(response), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {
@@ -144,9 +155,10 @@ describe('EmailService', () => {
     it('should handle HTTP errors', async () => {
       const url = 'https://example.com/workout.tcx';
       
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback({ ...mockResponse, statusCode: 404 }), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
       await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Failed to download file: HTTP 404');
@@ -182,12 +194,13 @@ describe('EmailService', () => {
       
       mockResponse.headers['content-disposition'] = 'attachment; filename="custom-workout.tcx"';
       
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {
@@ -205,12 +218,13 @@ describe('EmailService', () => {
       const testData = Buffer.from('test workout data');
       const url = 'https://example.com/path/to/myworkout.tcx';
       
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {
@@ -229,12 +243,13 @@ describe('EmailService', () => {
       const url = 'https://example.com/download';
       const customFilename = 'my-custom-workout.tcx';
       
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {
@@ -252,12 +267,13 @@ describe('EmailService', () => {
       const testData = Buffer.from('test workout data');
       const url = 'https://example.com/path/to/myworkout';
       
-      mockHttps.get.mockImplementation((url: any, callback: any) => {
+      mockHttps.get.mockImplementation((...args: any[]) => {
+        const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+        return mockRequest as any;;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: any) => void) => {
+      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {

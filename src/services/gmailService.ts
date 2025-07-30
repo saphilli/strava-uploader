@@ -8,7 +8,7 @@ import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
 import { BaseEmailService } from './emailService'; 
 
 export class GmailService extends BaseEmailService {
-  private gmail?: any; 
+  private gmail?: gmail_v1.Gmail; 
   
   constructor(config: EmailConfig) {
     super(config);
@@ -17,7 +17,7 @@ export class GmailService extends BaseEmailService {
   async connect(): Promise<void> {
     try {
       await this.initializeGmail()
-      await this.gmail.users.getProfile({ userId: 'me' });
+      await this.gmail!.users.getProfile({ userId: 'me' });
       logger.info('Connected to Gmail successfully');
     } catch (error) {
       logger.error('Failed to connect to email provider:', error);
@@ -89,6 +89,8 @@ export class GmailService extends BaseEmailService {
     
     if (response.data.messages) {
       for (const message of response.data.messages) {
+        if (!message.id) continue;
+        
         const fullMessage = await this.gmail.users.messages.get({
           userId: 'me',
           id: message.id,
@@ -106,9 +108,9 @@ export class GmailService extends BaseEmailService {
 
   private parseGmailMessage(message: gmail_v1.Schema$Message): EmailMessage {
     const headers = message.payload?.headers || [];
-    const from = headers.find((h: any) => h.name === 'From')?.value || ''; 
-    const subject = headers.find((h: any) => h.name === 'Subject')?.value || ''; 
-    const date = new Date(headers.find((h: any) => h.name === 'Date')?.value || ''); 
+    const from = headers.find((h: gmail_v1.Schema$MessagePartHeader) => h.name === 'From')?.value || ''; 
+    const subject = headers.find((h: gmail_v1.Schema$MessagePartHeader) => h.name === 'Subject')?.value || ''; 
+    const date = new Date(headers.find((h: gmail_v1.Schema$MessagePartHeader) => h.name === 'Date')?.value || ''); 
 
     const downloadLinks: string[] = [];
     

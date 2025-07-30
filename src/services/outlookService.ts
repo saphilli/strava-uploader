@@ -1,6 +1,4 @@
 import Imap from 'imap';
-import https from 'https';
-import http from 'http';
 import logger from '../utils/logger';
 import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
 import { BaseEmailService } from './emailService';

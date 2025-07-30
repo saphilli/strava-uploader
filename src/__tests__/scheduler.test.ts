@@ -20,17 +20,22 @@ describe('EmailScheduler', () => {
     
     mockEmailMonitor = {
       start: jest.fn().mockResolvedValue(undefined),
-      stop: jest.fn(),
-      isActive: jest.fn().mockReturnValue(true),
       checkForNewEmails: jest.fn().mockResolvedValue([]),
-      processWorkoutEmail: jest.fn().mockResolvedValue(undefined)
-    } as any;
-
-    mockCronJob = {
+      processWorkoutEmail: jest.fn().mockResolvedValue(undefined),
       stop: jest.fn(),
+      isActive: jest.fn().mockReturnValue(false),
+      emailService: {} as any,
+      filter: {} as any,
+      isRunning: jest.fn().mockReturnValue(false),
+      logEmailDetails: jest.fn(),
+      isWorkoutFile: jest.fn().mockReturnValue(false)
+    } as unknown as jest.Mocked<EmailMonitor>;
+    
+    mockCronJob = {
       start: jest.fn(),
+      stop: jest.fn(),
       destroy: jest.fn()
-    } as any;
+    } as unknown as jest.Mocked<cron.ScheduledTask>;
 
     (mockCron.schedule as jest.Mock).mockReturnValue(mockCronJob);
 
@@ -52,7 +57,7 @@ describe('EmailScheduler', () => {
     });
 
     it('should use default interval when not specified', () => {
-      const defaultScheduler = new EmailScheduler(undefined as any, mockEmailMonitor);
+      const defaultScheduler = new EmailScheduler(undefined as unknown as number, mockEmailMonitor);
       expect(defaultScheduler['intervalMinutes']).toBe(5);
     });
   });

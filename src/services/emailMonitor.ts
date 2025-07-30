@@ -6,10 +6,8 @@ export class EmailMonitor {
   private emailService: IEmailService;
   private filter: EmailFilter;
   private isRunning = false;
-  private technogymDomain= '';
   
   constructor(config: EmailConfig, emailService: IEmailService) {
-    this.technogymDomain = config.domain;
     this.emailService = emailService;
     this.filter = {
       fromDomain: config.domain
@@ -77,6 +75,8 @@ export class EmailMonitor {
       logger.info(`Processing workout email: ${message.subject}`);
 
       const workoutFile = await this.emailService.downloadWorkoutFile(message.downloadLinks[0], message.id);
+
+      //TDO: Implement workout file processing logic
     }
     
     private logEmailDetails(message: EmailMessage): void {

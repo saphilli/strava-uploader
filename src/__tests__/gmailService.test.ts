@@ -2,7 +2,7 @@ import { GmailService } from '../services/gmailService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider, EmailFilter } from '../types/email';
 import fs from 'fs';
-import { google } from 'googleapis';
+import { gmail_v1, google } from 'googleapis';
 import { authenticate } from '@google-cloud/local-auth';
 
 // Mock dependencies
@@ -20,8 +20,9 @@ describe('GmailService', () => {
 
   let gmailService: GmailService;
   let mockConfig: EmailConfig;
-  let mockGmailApi: any;
-
+  let mockGmailApi: jest.Mocked<gmail_v1.Gmail>;
+  let mockMessages: jest.Mocked<gmail_v1.Resource$Users$Messages>;
+  
   beforeEach(() => {
     jest.clearAllMocks();
     
@@ -30,25 +31,36 @@ describe('GmailService', () => {
       email: testEmail,
       domain: testDomain
     };
-    
-    // Mock Gmail API
+
+    // Create mock messages resource
+    mockMessages = {
+      list: jest.fn(),
+      get: jest.fn()
+    } as unknown as jest.Mocked<gmail_v1.Resource$Users$Messages>;
+
+    let mockUsers = {
+      getProfile: jest.fn().mockResolvedValue({ data: { emailAddress: testEmail } }),
+      messages: mockMessages
+    } as unknown as jest.Mocked<gmail_v1.Resource$Users>;
+
+    // Create mock Gmail API
     mockGmailApi = {
-      users: {
-        getProfile: jest.fn().mockResolvedValue({ data: { emailAddress: testEmail } }),
-        messages: {
-          list: jest.fn().mockResolvedValue({ data: { messages: [] } }),
-          get: jest.fn().mockResolvedValue({ data: {} })
-        }
-      }
-    };
-    
+      context: {
+        _options: {},
+        _google: mockGoogle,
+        _auth: {} as any,
+      },
+      users: mockUsers
+    } as unknown as jest.Mocked<gmail_v1.Gmail>;
+
     mockGoogle.gmail.mockReturnValue(mockGmailApi);
-    mockGoogle.auth = {
-      OAuth2: jest.fn().mockImplementation(() => ({
-        setCredentials: jest.fn(),
-        gaxios: { defaults: {} }
-      }))
-    } as any;
+
+    // (mockGoogle.auth as any) = {
+    //   OAuth2: jest.fn().mockImplementation(() => ({
+    //     setCredentials: jest.fn(),
+    //     gaxios: { defaults: {} }
+    //   }))
+    // };
     
     gmailService = new GmailService(mockConfig);
   });
@@ -79,14 +91,14 @@ describe('GmailService', () => {
       };
       const mockToken = { access_token: 'test-token', refresh_token: 'test-refresh' };
       
-      mockFs.existsSync.mockImplementation((path: any) => {
-        if (path.includes('credentials.json')) return true;
-        if (path.includes('token.json')) return true;
+      mockFs.existsSync.mockImplementation((path: fs.PathLike) => {
+        if (path.toString().includes('credentials.json')) return true;
+        if (path.toString().includes('token.json')) return true;
         return false;
       });
-      mockFs.readFileSync.mockImplementation((path: any) => {
-        if (path.includes('credentials.json')) return JSON.stringify(mockCredentials);
-        if (path.includes('token.json')) return JSON.stringify(mockToken);
+      mockFs.readFileSync.mockImplementation((path: fs.PathOrFileDescriptor) => {
+        if (path.toString().includes('credentials.json')) return JSON.stringify(mockCredentials);
+        if (path.toString().includes('token.json')) return JSON.stringify(mockToken);
         return '';
       });
       
@@ -108,14 +120,14 @@ describe('GmailService', () => {
         gaxios: { defaults: {} }
       };
       
-      mockFs.existsSync.mockImplementation((path: any) => {
-        if (path.includes('credentials.json')) return true;
-        if (path.includes('token.json')) return false;
+      mockFs.existsSync.mockImplementation((path: fs.PathLike) => {
+        if (path.toString().includes('credentials.json')) return true;
+        if (path.toString().includes('token.json')) return false;
         return false;
       });
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
       mockFs.writeFileSync.mockImplementation();
-      mockAuthenticate.mockResolvedValue(mockAuth as any);
+      mockAuthenticate.mockResolvedValue(mockAuth as Awaited<ReturnType<typeof authenticate>>);
       
       await gmailService.connect();
       
@@ -162,14 +174,14 @@ describe('GmailService', () => {
           redirect_uris: ['http://localhost']
         }
       };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
+      mockFs.existsSync.mockImplementation((path: fs.PathLike) => path.toString().includes('credentials.json'));
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
+      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as Awaited<ReturnType<typeof authenticate>>);
       
       await gmailService.connect();
       
       // Setup message data
-      const mockMessages = [{ id: 'msg1' }];
+      const message = [{ id: 'msg1' }];
       const mockFullMessage = {
         data: {
           id: 'msg1',
@@ -191,8 +203,8 @@ describe('GmailService', () => {
         }
       };
       
-      mockGmailApi.users.messages.list.mockResolvedValue({ data: { messages: mockMessages } });
-      mockGmailApi.users.messages.get.mockResolvedValue(mockFullMessage);
+      (mockGmailApi.users.messages.list as jest.Mock).mockResolvedValue({ data: { messages: message } });
+      (mockGmailApi.users.messages.get as jest.Mock).mockResolvedValue(mockFullMessage);
       
       const filter: EmailFilter = { fromDomain: testDomain };
       const result = await gmailService.getMessages(filter);
@@ -212,13 +224,13 @@ describe('GmailService', () => {
           redirect_uris: ['http://localhost']
         }
       };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
+      mockFs.existsSync.mockImplementation((path: fs.PathLike) => path.toString().includes('credentials.json'));
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
+      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as Awaited<ReturnType<typeof authenticate>>);
       
       await gmailService.connect();
       
-      mockGmailApi.users.messages.list.mockResolvedValue({ data: {} });
+      (mockGmailApi.users.messages.list as jest.Mock).mockResolvedValue({ data: {} });
       
       const filter: EmailFilter = { fromDomain: testDomain };
       const result = await gmailService.getMessages(filter);
@@ -235,14 +247,14 @@ describe('GmailService', () => {
           redirect_uris: ['http://localhost']
         }
       };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
+      mockFs.existsSync.mockImplementation((path: fs.PathLike) => path.toString().includes('credentials.json'));
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
+      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as Awaited<ReturnType<typeof authenticate>>);
       
       await gmailService.connect();
       
       const error = new Error('API Error');
-      mockGmailApi.users.messages.list.mockRejectedValue(error);
+      (mockGmailApi.users.messages.list as jest.Mock).mockRejectedValue(error);
       
       const filter: EmailFilter = { fromDomain: testDomain };
       await expect(gmailService.getMessages(filter)).rejects.toThrow('API Error');
