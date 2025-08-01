@@ -1,5 +1,4 @@
 import https from 'https';
-import http from 'http';
 import logger from '../utils/logger';
 import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
 
@@ -7,7 +6,7 @@ export interface IEmailService {
   connect(): Promise<void>;
   disconnect(): void;
   getMessages(filter: EmailFilter): Promise<EmailMessage[]> 
-  downloadWorkoutFile(url: string, filename?: string): Promise<{ filename: string; data: Buffer }>
+  downloadWorkoutFile(url: string, timeout?: number, filename?: string): Promise<{ filename: string; data: Buffer }>
 }
 
 export abstract class BaseEmailService implements IEmailService {
@@ -22,16 +21,20 @@ export abstract class BaseEmailService implements IEmailService {
 
   disconnect(): void {} // Default empty implementation
 
-  async downloadWorkoutFile(url: string, filename?: string): Promise<{ filename: string; data: Buffer }> {
+  async downloadWorkoutFile(url: string, timeout: number = 30000 , filename?: string): Promise<{ filename: string; data: Buffer }> {
     return new Promise((resolve, reject) => {
-      const client = url.startsWith('https:') ? https : http;
+      if (!url) {
+        return reject(new Error('URL is required to download workout file'));
+      }
+
+      const client = https;
       
       const request = client.get(url, (response) => {
         if (response.statusCode === 302 || response.statusCode === 301) {
           // Handle redirects
           const redirectUrl = response.headers.location;
           if (redirectUrl) {
-            this.downloadWorkoutFile(redirectUrl, filename)
+            this.downloadWorkoutFile(redirectUrl, timeout, filename)
               .then(resolve)
               .catch(reject);
             return;
@@ -85,9 +88,9 @@ export abstract class BaseEmailService implements IEmailService {
         reject(error);
       });
       
-      request.setTimeout(30000, () => {
+      request.setTimeout(timeout, () => {
         request.destroy();
-        reject(new Error('Download timeout'));
+        reject(new Error(`Download of workout file timed out: ${timeout}ms`));
       });
     });
   }

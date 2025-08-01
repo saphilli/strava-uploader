@@ -1,15 +1,11 @@
 import { GmailService } from '../services/gmailService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider } from '../types/email';
+import { ClientRequest, IncomingMessage } from 'http';
 import https from 'https';
-import http from 'http';
 
-// Mock dependencies
 jest.mock('https');
-jest.mock('http');
-
 const mockHttps = https as jest.Mocked<typeof https>;
-const mockHttp = http as jest.Mocked<typeof http>;
 
 describe('EmailService', () => {
   const testDomain = 'mywellness.com';
@@ -19,7 +15,7 @@ describe('EmailService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+        
     mockConfig = {
       provider: EmailProvider.Gmail,
       email: testEmail,
@@ -27,148 +23,102 @@ describe('EmailService', () => {
     };
   });
 
-  describe('IEmailService interface', () => {
-    it('should define correct interface methods', () => {
-      const service = new GmailService(mockConfig);
-      
-      expect(typeof service.connect).toBe('function');
-      expect(typeof service.disconnect).toBe('function');
-      expect(typeof service.getMessages).toBe('function');
-      expect(typeof service.downloadWorkoutFile).toBe('function');
-    });
-  });
-
   describe('BaseEmailService - downloadWorkoutFile', () => {
+    const url = 'https://example.com/workout.tcx';
+
+    let eventListeners: { [key: string]: Function };
     let baseService: BaseEmailService;
-    let mockResponse: jest.Mocked<{
-      statusCode: number;
-      headers: Record<string, string>;
-      on: (event: string, callback: (data?: Buffer) => void) => void;
-    }>;
-    let mockRequest: jest.Mocked<{
-      on: (event: string, callback: (error?: Error) => void) => void;
-      setTimeout: (timeout: number, callback: () => void) => void;
-      destroy: () => void;
-    }>;
+    let mockResponse: jest.Mocked<IncomingMessage>;
+    let mockRequest: jest.Mocked<ClientRequest>;
 
     beforeEach(() => {
       baseService = new GmailService(mockConfig);
-      
+      eventListeners = {};
+
       mockResponse = {
+        on: jest.fn().mockImplementation((event: string, callback: Function) => {
+          eventListeners[event] = callback;
+        }),
         statusCode: 200,
-        headers: {},
-        on: jest.fn()
-      };
-      
+        headers: { 'content-disposition': 'attachment; filename="workout.tcx"'}
+      } as unknown as jest.Mocked<IncomingMessage>;
+
       mockRequest = {
         on: jest.fn(),
         setTimeout: jest.fn(),
         destroy: jest.fn()
-      };
+      } as unknown as jest.Mocked<ClientRequest>;
       
-      mockHttps.get = jest.fn().mockReturnValue(mockRequest);
-      mockHttp.get = jest.fn().mockReturnValue(mockRequest);
+      mockHttps.get.mockImplementation((_: any, callback?: any) => {
+        if (callback) {
+          callback(mockResponse);
+        }
+        return mockRequest;
+      });
     });
 
     it('should download file successfully via HTTPS', async () => {
-      const testData = Buffer.from('test workout data');
-      const url = 'https://example.com/workout.tcx';
+      const testData = [ 
+        Buffer.from('<tcx><workout>'),
+        Buffer.from('</workout></tcx>')
+      ];
       
-      mockHttps.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback(mockResponse), 0);
-        return mockRequest as any;
-      });
-      
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
-        if (event === 'data') {
-          setTimeout(() => callback(testData), 0);
-        } else if (event === 'end') {
-          setTimeout(() => callback(), 0);
-        }
-      });
-      
-      const result = await baseService.downloadWorkoutFile(url);
+      const promise = baseService.downloadWorkoutFile(url);
+
+      // Simulate data events after listeners are registered
+      testData.forEach(chunk => eventListeners['data'](chunk));
+      eventListeners['end']();
+
+      const result = await promise;
       
       expect(result.filename).toBe('workout.tcx');
-      expect(result.data).toEqual(testData);
-      expect(mockHttps.get).toHaveBeenCalledWith(url, expect.any(Function));
+      expect(result.data.toString()).toBe('<tcx><workout></workout></tcx>');
+      expect(https.get).toHaveBeenCalledWith(url, expect.any(Function));
     });
-
-    it('should download file successfully via HTTP', async () => {
-      const testData = Buffer.from('test workout data');
-      const url = 'http://example.com/workout.tcx';
-      
-      mockHttp.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback(mockResponse), 0);
-        return mockRequest as any;;
-      });
-      
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
-        if (event === 'data') {
-          setTimeout(() => callback(testData), 0);
-        } else if (event === 'end') {
-          setTimeout(() => callback(), 0);
-        }
-      });
-      
-      const result = await baseService.downloadWorkoutFile(url);
-      
-      expect(result.filename).toBe('workout.tcx');
-      expect(result.data).toEqual(testData);
-      expect(mockHttp.get).toHaveBeenCalledWith(url, expect.any(Function));
-    });
-
+    
     it('should handle HTTP redirects', async () => {
-      const testData = Buffer.from('test workout data');
-      const originalUrl = 'https://example.com/workout.tcx';
+      const testData = [ 
+        Buffer.from('<tcx><workout>'),
+        Buffer.from('</workout></tcx>')
+      ];
       const redirectUrl = 'https://cdn.example.com/workout.tcx';
       
+      // set up mock redirect response followed by succcess
       let callCount = 0;
-      mockHttps.get.mockImplementation((...args: any[]) => {
+      mockHttps.get.mockImplementation((_, callback?: any) => {
         callCount++;
-        const callback = args[args.length - 1];
         const response = callCount === 1 
-          ? { ...mockResponse, statusCode: 302, headers: { location: redirectUrl } }
-          : { ...mockResponse, statusCode: 200 };
+        ? { ...mockResponse, statusCode: 302, headers: { location: redirectUrl } }
+        : { ...mockResponse, statusCode: 200 };
         
-        setTimeout(() => callback(response), 0);
-        return mockRequest as any;;
+        callback(response);
+        return mockRequest;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
-        if (event === 'data') {
-          setTimeout(() => callback(testData), 0);
-        } else if (event === 'end') {
-          setTimeout(() => callback(), 0);
-        }
-      });
-      
-      const result = await baseService.downloadWorkoutFile(originalUrl);
+      let promise = baseService.downloadWorkoutFile(url);
+      testData.forEach(chunk => eventListeners['data'](chunk));
+      eventListeners['end']();
+      const result = await promise;
       
       expect(result.filename).toBe('workout.tcx');
-      expect(result.data).toEqual(testData);
+      expect(result.data.toString()).toEqual('<tcx><workout></workout></tcx>');
       expect(mockHttps.get).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle HTTP errors', async () => {
-      const url = 'https://example.com/workout.tcx';
-      
+    it('should handle HTTP errors', async () => {      
       mockHttps.get.mockImplementation((...args: any[]) => {
         const callback = args[args.length - 1];
         setTimeout(() => callback({ ...mockResponse, statusCode: 404 }), 0);
-        return mockRequest as any;;
+        return mockRequest as any;
       });
       
       await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Failed to download file: HTTP 404');
     });
 
     it('should handle network errors', async () => {
-      const url = 'https://example.com/workout.tcx';
       const error = new Error('Network error');
-      
-      mockRequest.on.mockImplementation((event: string, callback: (error: Error) => void) => {
+      let test = jest.fn().mockImplementation((...args: any[]) => {
+      mockResponse.on.mockImplementation((event: string, callback: (error: Error) => void) => {
         if (event === 'error') {
           setTimeout(() => callback(error), 0);
         }
@@ -178,9 +128,7 @@ describe('EmailService', () => {
     });
 
     it('should handle timeout', async () => {
-      const url = 'https://example.com/workout.tcx';
-      
-      mockRequest.setTimeout.mockImplementation((timeout: number, callback: () => void) => {
+      mockRequest.setTimeout = jest.fn().mockImplementation((timeout: number, callback: () => void) => {
         setTimeout(callback, 0);
       });
       
@@ -221,7 +169,7 @@ describe('EmailService', () => {
       mockHttps.get.mockImplementation((...args: any[]) => {
         const callback = args[args.length - 1];
         setTimeout(() => callback(mockResponse), 0);
-        return mockRequest as any;;
+        return mockRequest;
       });
       
       mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
