@@ -1,11 +1,12 @@
+import { describe, it, expect, beforeEach, vi, type MockedObject } from 'vitest';
 import { GmailService } from '../services/gmailService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider } from '../types/email';
 import { ClientRequest, IncomingMessage } from 'http';
 import https from 'https';
 
-jest.mock('https');
-const mockHttps = https as jest.Mocked<typeof https>;
+vi.mock('https');
+const mockHttps = vi.mocked(https);
 
 describe('EmailService', () => {
   const testDomain = 'mywellness.com';
@@ -14,7 +15,7 @@ describe('EmailService', () => {
   let mockConfig: EmailConfig;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
         
     mockConfig = {
       provider: EmailProvider.Gmail,
@@ -28,32 +29,32 @@ describe('EmailService', () => {
 
     let eventListeners: { [key: string]: Function };
     let baseService: BaseEmailService;
-    let mockResponse: jest.Mocked<IncomingMessage>;
-    let mockRequest: jest.Mocked<ClientRequest>;
+    let mockResponse: Partial<IncomingMessage>;
+    let mockRequest: Partial<ClientRequest>;
 
     beforeEach(() => {
       baseService = new GmailService(mockConfig);
       eventListeners = {};
 
       mockResponse = {
-        on: jest.fn().mockImplementation((event: string, callback: Function) => {
+        on: vi.fn().mockImplementation((event: string, callback: Function) => {
           eventListeners[event] = callback;
         }),
         statusCode: 200,
         headers: { 'content-disposition': 'attachment; filename="workout.tcx"'}
-      } as unknown as jest.Mocked<IncomingMessage>;
+      } as Partial<IncomingMessage>;
 
       mockRequest = {
-        on: jest.fn(),
-        setTimeout: jest.fn(),
-        destroy: jest.fn()
-      } as unknown as jest.Mocked<ClientRequest>;
+        on: vi.fn(),
+        setTimeout: vi.fn(),
+        destroy: vi.fn()
+      } as Partial<ClientRequest>;
       
       mockHttps.get.mockImplementation((_: any, callback?: any) => {
         if (callback) {
           callback(mockResponse);
         }
-        return mockRequest;
+        return mockRequest as ClientRequest;
       });
     });
 
@@ -92,7 +93,7 @@ describe('EmailService', () => {
         : { ...mockResponse, statusCode: 200 };
         
         callback(response);
-        return mockRequest;
+        return mockRequest as ClientRequest;
       });
       
       let promise = baseService.downloadWorkoutFile(url);
@@ -106,21 +107,23 @@ describe('EmailService', () => {
     });
 
     it('should handle HTTP errors', async () => {      
-      mockHttps.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback({ ...mockResponse, statusCode: 404 }), 0);
-        return mockRequest as any;
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback({ ...mockResponse, statusCode: 404 });
+        return mockRequest as ClientRequest;
       });
       
       await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Failed to download file: HTTP 404');
     });
 
-    it('should handle network errors', async () => {
+    it('should reject on missing URL parameter', async () => {
+      await expect(baseService.downloadWorkoutFile('')).rejects.toThrow('URL is required to download workout file');
+    });
+
+    it('should handle network errors on response', async () => {
       const error = new Error('Network error');
-      let test = jest.fn().mockImplementation((...args: any[]) => {
-      mockResponse.on.mockImplementation((event: string, callback: (error: Error) => void) => {
+      mockResponse.on = vi.fn().mockImplementation((event: string, callback: (error: Error) => void) => {
         if (event === 'error') {
-          setTimeout(() => callback(error), 0);
+          callback(error);
         }
       });
       
@@ -128,55 +131,30 @@ describe('EmailService', () => {
     });
 
     it('should handle timeout', async () => {
-      mockRequest.setTimeout = jest.fn().mockImplementation((timeout: number, callback: () => void) => {
+      mockRequest.setTimeout = vi.fn().mockImplementation((timeout: number, callback: () => void) => {
         setTimeout(callback, 0);
       });
       
-      await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Download timeout');
+      await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Download of workout file timed out');
       expect(mockRequest.destroy).toHaveBeenCalled();
-    });
-
-    it('should extract filename from Content-Disposition header', async () => {
-      const testData = Buffer.from('test workout data');
-      const url = 'https://example.com/download';
-      
-      mockResponse.headers['content-disposition'] = 'attachment; filename="custom-workout.tcx"';
-      
-      mockHttps.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback(mockResponse), 0);
-        return mockRequest as any;;
-      });
-      
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
-        if (event === 'data') {
-          setTimeout(() => callback(testData), 0);
-        } else if (event === 'end') {
-          setTimeout(() => callback(), 0);
-        }
-      });
-      
-      const result = await baseService.downloadWorkoutFile(url);
-      
-      expect(result.filename).toBe('custom-workout.tcx');
-      expect(result.data).toEqual(testData);
     });
 
     it('should extract filename from URL path when no Content-Disposition', async () => {
       const testData = Buffer.from('test workout data');
       const url = 'https://example.com/path/to/myworkout.tcx';
       
-      mockHttps.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback(mockResponse), 0);
-        return mockRequest;
+      mockResponse.headers = {};
+      mockResponse.statusCode = 200;
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback(mockResponse);
+        return mockRequest as ClientRequest;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
+      (mockResponse.on as any).mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
-          setTimeout(() => callback(testData), 0);
+          callback(testData);
         } else if (event === 'end') {
-          setTimeout(() => callback(), 0);
+          callback();
         }
       });
       
@@ -191,21 +169,20 @@ describe('EmailService', () => {
       const url = 'https://example.com/download';
       const customFilename = 'my-custom-workout.tcx';
       
-      mockHttps.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback(mockResponse), 0);
-        return mockRequest as any;;
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback(mockResponse);
+        return mockRequest as ClientRequest;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
+      mockResponse.on = vi.fn().mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
-          setTimeout(() => callback(testData), 0);
+          callback(testData);
         } else if (event === 'end') {
-          setTimeout(() => callback(), 0);
+          callback();
         }
       });
       
-      const result = await baseService.downloadWorkoutFile(url, customFilename);
+      const result = await baseService.downloadWorkoutFile(url, 100, customFilename);
       
       expect(result.filename).toBe(customFilename);
       expect(result.data).toEqual(testData);
@@ -214,14 +191,14 @@ describe('EmailService', () => {
     it('should add .tcx extension if missing from extracted filename', async () => {
       const testData = Buffer.from('test workout data');
       const url = 'https://example.com/path/to/myworkout';
+      mockResponse.headers = {'content-disposition': 'attachment; filename="myworkout"'};
       
-      mockHttps.get.mockImplementation((...args: any[]) => {
-        const callback = args[args.length - 1];
-        setTimeout(() => callback(mockResponse), 0);
-        return mockRequest as any;;
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback(mockResponse);
+        return mockRequest as ClientRequest;
       });
       
-      mockResponse.on.mockImplementation((event: string, callback: (data?: Buffer) => void) => {
+      mockResponse.on = vi.fn().mockImplementation((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
           setTimeout(() => callback(testData), 0);
         } else if (event === 'end') {

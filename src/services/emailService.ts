@@ -69,10 +69,11 @@ export abstract class BaseEmailService implements IEmailService {
             if (!finalFilename) {
               const urlParts = url.split('/');
               finalFilename = urlParts[urlParts.length - 1] || 'workout.tcx';
-              if (!finalFilename.endsWith('.tcx')) {
+            }
+
+            if (!finalFilename.endsWith('.tcx')) {
                 finalFilename += '.tcx';
               }
-            }
           }
           
           logger.info(`Downloaded TCX file: ${finalFilename} (${data.length} bytes)`);
