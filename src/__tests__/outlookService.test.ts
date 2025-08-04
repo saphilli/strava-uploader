@@ -1,28 +1,29 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OutlookService } from '../services/outlookService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider, EmailFilter } from '../types/email';
 import Imap from 'imap';
 
 // Mock dependencies
-jest.mock('imap');
+vi.mock('imap');
 
-const mockImap = Imap as jest.MockedClass<typeof Imap>;
+const mockImap = vi.mocked(Imap);
 
 describe.skip('OutlookService', () => {
   const testDomain = 'mywellness.com';
   
   let outlookService: OutlookService;
   let outlookConfig: EmailConfig;
-  let mockImapInstance: jest.Mocked<{
+  let mockImapInstance: {
     once: (event: string, callback: (error?: Error) => void) => void;
     connect: () => void;
     end: () => void;
     openBox: (box: string, readOnly: boolean, callback: (err?: Error) => void) => void;
     search: (criteria: unknown, callback: (err?: Error, results?: unknown[]) => void) => void;
-  }>;
+  };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     outlookConfig = {
       provider: EmailProvider.Outlook,
@@ -37,11 +38,11 @@ describe.skip('OutlookService', () => {
     
     // Mock IMAP instance
     mockImapInstance = {
-      once: jest.fn(),
-      connect: jest.fn(),
-      end: jest.fn(),
-      openBox: jest.fn(),
-      search: jest.fn()
+      once: vi.fn(),
+      connect: vi.fn(),
+      end: vi.fn(),
+      openBox: vi.fn(),
+      search: vi.fn()
     };
     
     mockImap.mockImplementation(() => mockImapInstance as any);

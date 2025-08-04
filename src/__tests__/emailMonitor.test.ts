@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { EmailMonitor } from '../services/emailMonitor';
 import { EmailConfig, EmailProvider, EmailMessage } from '../types/email';
 import { IEmailService } from '../services/emailService';
@@ -11,7 +12,7 @@ describe('EmailMonitor', () => {
   let mockEmailService: IEmailService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     mockConfig = {
       provider: EmailProvider.Gmail,
@@ -20,9 +21,9 @@ describe('EmailMonitor', () => {
     };
     
     mockEmailService = {
-      connect: jest.fn().mockResolvedValue(undefined),
-      disconnect: jest.fn(),
-      getMessages: jest.fn().mockResolvedValue([
+      connect: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn(),
+      getMessages: vi.fn().mockResolvedValue([
         {
           id: '1',
           from: 'test@mywellness.com',
@@ -38,11 +39,11 @@ describe('EmailMonitor', () => {
           downloadLinks: ['https://example.com/workout2.gpx']
         }
       ]),
-      downloadWorkoutFile: jest.fn().mockResolvedValue({ 
+      downloadWorkoutFile: vi.fn().mockResolvedValue({ 
         filename: 'workout.tcx', 
-        data: require('fs').readFileSync(require('path').join(__dirname, '../testdata/workout.tcx'))
+        data: Buffer.from('test workout data')
       }),
-      processWorkoutEmail: jest.fn().mockResolvedValue(undefined)
+      processWorkoutEmail: vi.fn().mockResolvedValue(undefined)
     } as IEmailService;
     
     emailMonitor = new EmailMonitor(mockConfig, mockEmailService);
@@ -79,7 +80,7 @@ describe('EmailMonitor', () => {
 
     it('should throw error when email service connection fails', async () => {
       const error = new Error('Connection failed');
-      (mockEmailService.connect as jest.Mock).mockRejectedValue(error);
+      (mockEmailService.connect as vi.Mock).mockRejectedValue(error);
       
       await expect(emailMonitor.start()).rejects.toThrow('Connection failed');
       expect(emailMonitor.isActive()).toBe(false);
@@ -136,7 +137,7 @@ describe('EmailMonitor', () => {
 
     it('should return empty array when no emails found', async () => {
       emailMonitor['isRunning'] = true;
-      (mockEmailService.getMessages as jest.Mock).mockResolvedValue([]);
+      (mockEmailService.getMessages as vi.Mock).mockResolvedValue([]);
       
       const result = await emailMonitor.checkForNewEmails();
       
@@ -166,7 +167,7 @@ describe('EmailMonitor', () => {
         }
       ];
       
-      (mockEmailService.getMessages as jest.Mock).mockResolvedValue(mockMessages);
+      (mockEmailService.getMessages as vi.Mock).mockResolvedValue(mockMessages);
       
       const result = await emailMonitor.checkForNewEmails();
       
@@ -178,7 +179,7 @@ describe('EmailMonitor', () => {
     it('should handle errors from email service', async () => {
       emailMonitor['isRunning'] = true;
       const error = new Error('Service error');
-      (mockEmailService.getMessages as jest.Mock).mockRejectedValue(error);
+      (mockEmailService.getMessages as vi.Mock).mockRejectedValue(error);
       
       await expect(emailMonitor.checkForNewEmails()).rejects.toThrow('Service error');
     });
@@ -197,11 +198,11 @@ describe('EmailMonitor', () => {
       await emailMonitor.processWorkoutEmail(mockMessage);
       
       expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalledTimes(1);
-      expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalledWith('link1', 'msg-1');
+      expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalledWith('link1', 30000, 'msg-1');
     });
 
     it('should handle download errors gracefully', async () => {
-      (mockEmailService.downloadWorkoutFile as jest.Mock).mockRejectedValue(new Error('Download failed'));
+      (mockEmailService.downloadWorkoutFile as vi.Mock).mockRejectedValue(new Error('Download failed'));
       
       await expect(emailMonitor.processWorkoutEmail(mockMessage)).rejects.toThrow('Download failed');
       expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalled();

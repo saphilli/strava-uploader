@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GmailService } from '../services/gmailService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider, EmailFilter } from '../types/email';
@@ -6,13 +7,13 @@ import { gmail_v1, google } from 'googleapis';
 import { authenticate } from '@google-cloud/local-auth';
 
 // Mock dependencies
-jest.mock('googleapis');
-jest.mock('@google-cloud/local-auth');
-jest.mock('fs');
+vi.mock('googleapis');
+vi.mock('@google-cloud/local-auth');
+vi.mock('fs');
 
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockGoogle = google as jest.Mocked<typeof google>;
-const mockAuthenticate = authenticate as jest.MockedFunction<typeof authenticate>;
+const mockFs = vi.mocked(fs);
+const mockGoogle = vi.mocked(google);
+const mockAuthenticate = vi.mocked(authenticate);
 
 describe('GmailService', () => {
   const testDomain = 'mywellness.com';
@@ -20,11 +21,11 @@ describe('GmailService', () => {
 
   let gmailService: GmailService;
   let mockConfig: EmailConfig;
-  let mockGmailApi: jest.Mocked<gmail_v1.Gmail>;
-  let mockMessages: jest.Mocked<gmail_v1.Resource$Users$Messages>;
+  let mockGmailApi: any;
+  let mockMessages: any;
   
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     mockConfig = {
       provider: EmailProvider.Gmail,
@@ -34,14 +35,14 @@ describe('GmailService', () => {
 
     // Create mock messages resource
     mockMessages = {
-      list: jest.fn(),
-      get: jest.fn()
-    } as unknown as jest.Mocked<gmail_v1.Resource$Users$Messages>;
+      list: vi.fn(),
+      get: vi.fn()
+    } as any;
 
     let mockUsers = {
-      getProfile: jest.fn().mockResolvedValue({ data: { emailAddress: testEmail } }),
+      getProfile: vi.fn().mockResolvedValue({ data: { emailAddress: testEmail } }),
       messages: mockMessages
-    } as unknown as jest.Mocked<gmail_v1.Resource$Users>;
+    } as any;
 
     // Create mock Gmail API
     mockGmailApi = {
@@ -51,13 +52,13 @@ describe('GmailService', () => {
         _auth: {} as any,
       },
       users: mockUsers
-    } as unknown as jest.Mocked<gmail_v1.Gmail>;
+    } as any;
 
     mockGoogle.gmail.mockReturnValue(mockGmailApi);
 
     // (mockGoogle.auth as any) = {
-    //   OAuth2: jest.fn().mockImplementation(() => ({
-    //     setCredentials: jest.fn(),
+    //   OAuth2: vi.fn().mockImplementation(() => ({
+    //     setCredentials: vi.fn(),
     //     gaxios: { defaults: {} }
     //   }))
     // };
@@ -101,6 +102,15 @@ describe('GmailService', () => {
         if (path.toString().includes('token.json')) return JSON.stringify(mockToken);
         return '';
       });
+      
+      // Mock OAuth2 constructor
+      const mockAuth = {
+        setCredentials: vi.fn(),
+        gaxios: { defaults: {} }
+      };
+      (mockGoogle.auth as any) = {
+        OAuth2: vi.fn().mockImplementation(() => mockAuth)
+      };
       
       await gmailService.connect();
       
@@ -176,7 +186,10 @@ describe('GmailService', () => {
       };
       mockFs.existsSync.mockImplementation((path: fs.PathLike) => path.toString().includes('credentials.json'));
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as Awaited<ReturnType<typeof authenticate>>);
+      mockAuthenticate.mockResolvedValue({ 
+        credentials: {}, 
+        gaxios: { defaults: {} }
+      } as any);
       
       await gmailService.connect();
       
@@ -203,8 +216,8 @@ describe('GmailService', () => {
         }
       };
       
-      (mockGmailApi.users.messages.list as jest.Mock).mockResolvedValue({ data: { messages: message } });
-      (mockGmailApi.users.messages.get as jest.Mock).mockResolvedValue(mockFullMessage);
+      (mockGmailApi.users.messages.list as vi.Mock).mockResolvedValue({ data: { messages: message } });
+      (mockGmailApi.users.messages.get as vi.Mock).mockResolvedValue(mockFullMessage);
       
       const filter: EmailFilter = { fromDomain: testDomain };
       const result = await gmailService.getMessages(filter);
@@ -226,11 +239,14 @@ describe('GmailService', () => {
       };
       mockFs.existsSync.mockImplementation((path: fs.PathLike) => path.toString().includes('credentials.json'));
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as Awaited<ReturnType<typeof authenticate>>);
+      mockAuthenticate.mockResolvedValue({ 
+        credentials: {}, 
+        gaxios: { defaults: {} }
+      } as any);
       
       await gmailService.connect();
       
-      (mockGmailApi.users.messages.list as jest.Mock).mockResolvedValue({ data: {} });
+      (mockGmailApi.users.messages.list as vi.Mock).mockResolvedValue({ data: {} });
       
       const filter: EmailFilter = { fromDomain: testDomain };
       const result = await gmailService.getMessages(filter);
@@ -249,12 +265,15 @@ describe('GmailService', () => {
       };
       mockFs.existsSync.mockImplementation((path: fs.PathLike) => path.toString().includes('credentials.json'));
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as Awaited<ReturnType<typeof authenticate>>);
+      mockAuthenticate.mockResolvedValue({ 
+        credentials: {}, 
+        gaxios: { defaults: {} }
+      } as any);
       
       await gmailService.connect();
       
       const error = new Error('API Error');
-      (mockGmailApi.users.messages.list as jest.Mock).mockRejectedValue(error);
+      (mockGmailApi.users.messages.list as vi.Mock).mockRejectedValue(error);
       
       const filter: EmailFilter = { fromDomain: testDomain };
       await expect(gmailService.getMessages(filter)).rejects.toThrow('API Error');

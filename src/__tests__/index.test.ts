@@ -1,43 +1,47 @@
+import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction } from 'vitest';
 import { EmailMonitor } from '../services/emailMonitor';
 import { EmailScheduler } from '../services/scheduler';
 import { EmailProvider } from '../types/email';
 
 // Mock dependencies
-jest.mock('../services/scheduler');
-jest.mock('../utils/logger');
+vi.mock('../services/scheduler');
+vi.mock('../utils/logger');
 // Prevent dotenv from loading .env file
-jest.mock('dotenv', () => ({
-  config: jest.fn()
+vi.mock('dotenv', () => ({
+  default: {
+    config: vi.fn()
+  },
+  config: vi.fn()
 }));
 
 describe('index.ts', () => {
-  let mockScheduler: jest.Mocked<EmailScheduler>;
-  let mockExit: jest.SpyInstance;
-  let mockConsoleLog: jest.SpyInstance;
+  let mockScheduler: any;
+  let mockExit: any;
+  let mockConsoleLog: any;
 
   beforeEach(() => {
     // Clear mocks but don't reset modules for now
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock process.exit
-    mockExit = jest.spyOn(process, 'exit').mockImplementation();
+    mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     
     // Mock console.log to avoid noise in tests
-    mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
+    mockConsoleLog = vi.spyOn(console, 'log').mockImplementation();
     
     // Create mock scheduler instance
     mockScheduler = {
-      startScheduledMonitoring: jest.fn().mockResolvedValue(undefined),
-      startContinuousMonitoring: jest.fn().mockResolvedValue(undefined),
-      runOnce: jest.fn().mockResolvedValue(undefined),
-      stop: jest.fn(),
-      isRunning: jest.fn().mockReturnValue(false)
-    } as unknown as jest.Mocked<EmailScheduler>;
+      startScheduledMonitoring: vi.fn().mockResolvedValue(undefined),
+      startContinuousMonitoring: vi.fn().mockResolvedValue(undefined),
+      runOnce: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn(),
+      isRunning: vi.fn().mockReturnValue(false)
+    } as any;
     
     // Mock EmailScheduler constructor
-    (EmailScheduler as jest.MockedClass<typeof EmailScheduler>).mockImplementation(() => {
+    vi.mocked(EmailScheduler).mockImplementation((() => {
       return mockScheduler;
-    });
+    }) as any);
     
   });
   
@@ -52,17 +56,17 @@ describe('index.ts', () => {
       process.env.EMAIL_PROVIDER = 'invalid';
       process.env.EMAIL_ADDRESS = 'test@gmail.com';
       
-      const { createEmailConfig } = require('../index');
+      const indexModule = await import('../index');
       
-      expect(() => createEmailConfig()).toThrow(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
+      expect(() => indexModule.createEmailConfig()).toThrow(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
     });
 
     it('should create Gmail config with default domain', async () => {
       process.env.EMAIL_PROVIDER = 'gmail';
       process.env.EMAIL_ADDRESS = 'test@gmail.com';
 
-      const { createEmailConfig } = require('../index');
-      let config = createEmailConfig();
+      const indexModule = await import('../index');
+      let config = indexModule.createEmailConfig();
 
       expect(config).toMatchObject({
         provider: 'gmail',
@@ -76,8 +80,8 @@ describe('index.ts', () => {
       process.env.EMAIL_ADDRESS = 'test@gmail.com';
       process.env.TECHNOGYM_DOMAIN = 'custom.com';
       
-      const { createEmailConfig } = require('../index');      
-      let config = createEmailConfig();
+      const indexModule = await import('../index');      
+      let config = indexModule.createEmailConfig();
 
       expect(config).toMatchObject({
         provider: 'gmail',
@@ -93,9 +97,9 @@ describe('index.ts', () => {
       process.env.OUTLOOK_CLIENT_SECRET = 'client-secret';
       process.env.OUTLOOK_REFRESH_TOKEN = 'refresh-token';
       
-      const { createEmailConfig } = require('../index');
+      const indexModule = await import('../index');
       
-      let config = createEmailConfig();
+      let config = indexModule.createEmailConfig();
       
       expect(config).toMatchObject({
         provider: 'outlook',
@@ -112,18 +116,18 @@ describe('index.ts', () => {
     it('should throw error for invalid provider', async () => {
       process.env.EMAIL_PROVIDER = 'invalid';
       
-      const { createEmailConfig } = require('../index');
+      const indexModule = await import('../index');
       
-      expect(() => createEmailConfig()).toThrow(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
+      expect(() => indexModule.createEmailConfig()).toThrow(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
     });
 
     it('should throw error for missing EMAIL_ADDRESS', async () => {
       process.env.EMAIL_PROVIDER = 'gmail';
       // EMAIL_ADDRESS not set
       
-      const { createEmailConfig } = require('../index');
+      const indexModule = await import('../index');
       
-      expect(() => createEmailConfig()).toThrow('EMAIL_ADDRESS is required in environment variables.');
+      expect(() => indexModule.createEmailConfig()).toThrow('EMAIL_ADDRESS is required in environment variables.');
     });
 
     it('should throw error for missing Outlook credentials', async () => {
@@ -131,9 +135,9 @@ describe('index.ts', () => {
       process.env.EMAIL_ADDRESS = 'test@outlook.com';
       // Missing OUTLOOK_CLIENT_ID, OUTLOOK_CLIENT_SECRET, OUTLOOK_REFRESH_TOKEN
       
-        const { createEmailConfig } = require('../index');
+        const indexModule = await import('../index');
       
-      expect(() => createEmailConfig()).toThrow('Missing required Outlook configuration. Check your environment variables.');
+      expect(() => indexModule.createEmailConfig()).toThrow('Missing required Outlook configuration. Check your environment variables.');
     });
   });
 
@@ -144,9 +148,9 @@ describe('index.ts', () => {
     });
 
     it('should start scheduled monitoring by default', async () => {
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
-      await main();
+      await indexModule.main();
 
       expect(mockScheduler.startScheduledMonitoring).toHaveBeenCalled();
       expect(mockScheduler.startContinuousMonitoring).not.toHaveBeenCalled();
@@ -156,9 +160,9 @@ describe('index.ts', () => {
     it('should start scheduled monitoring when MODE=scheduled', async () => {
       process.env.MODE = 'scheduled';
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
-      await main();      
+      await indexModule.main();      
 
       expect(mockScheduler.startScheduledMonitoring).toHaveBeenCalled();
       expect(mockScheduler.startContinuousMonitoring).not.toHaveBeenCalled();
@@ -168,9 +172,9 @@ describe('index.ts', () => {
     it('should start continuous monitoring when MODE=continuous', async () => {
       process.env.MODE = 'continuous';
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
-      await main();      
+      await indexModule.main();      
 
       expect(mockScheduler.startContinuousMonitoring).toHaveBeenCalled();
       expect(mockScheduler.startScheduledMonitoring).not.toHaveBeenCalled();
@@ -180,9 +184,9 @@ describe('index.ts', () => {
     it('should run once when MODE=once', async () => {
       process.env.MODE = 'once';
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
-      await main();
+      await indexModule.main();
 
       expect(mockScheduler.runOnce).toHaveBeenCalled();
       expect(mockScheduler.startContinuousMonitoring).not.toHaveBeenCalled();
@@ -193,9 +197,9 @@ describe('index.ts', () => {
     it('should use custom interval from environment', async () => {
       process.env.MONITOR_INTERVAL_MINUTES = '10';
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
-      await main();
+      await indexModule.main();
 
       expect(EmailScheduler).toHaveBeenCalledWith(
         10,
@@ -206,9 +210,9 @@ describe('index.ts', () => {
     it('should handle startup errors', async () => {
       mockScheduler.startScheduledMonitoring.mockRejectedValue(new Error('Startup failed'));
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
-      await main();      
+      await indexModule.main();      
       
       expect(mockExit).toHaveBeenCalledWith(1);
     });
@@ -219,10 +223,10 @@ describe('index.ts', () => {
       process.env.EMAIL_PROVIDER = 'gmail';
       process.env.EMAIL_ADDRESS = 'test@gmail.com';
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
       // Start the main function and wait for scheduler to be set up
-      const mainPromise = main().catch(() => {});
+      const mainPromise = indexModule.main().catch(() => {});
       
       // Wait for the next tick to ensure signal handlers are registered
       await new Promise(resolve => setImmediate(resolve));
@@ -239,10 +243,10 @@ describe('index.ts', () => {
       process.env.EMAIL_PROVIDER = 'gmail';
       process.env.EMAIL_ADDRESS = 'test@gmail.com';
       
-      const { main } = require('../index');
+      const indexModule = await import('../index');
       
       // Start the main function and wait for scheduler to be set up
-      const mainPromise = main().catch(() => {});
+      const mainPromise = indexModule.main().catch(() => {});
       
       // Wait for the next tick to ensure signal handlers are registered
       await new Promise(resolve => setImmediate(resolve));

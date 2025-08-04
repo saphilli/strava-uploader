@@ -1,43 +1,44 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EmailScheduler } from '../services/scheduler';
 import { EmailMonitor } from '../services/emailMonitor';
 import * as cron from 'node-cron';
 
 // Mock dependencies
-jest.mock('../services/emailMonitor');
-jest.mock('node-cron', () => ({
-  schedule: jest.fn()
+vi.mock('../services/emailMonitor');
+vi.mock('node-cron', () => ({
+  schedule: vi.fn()
 }));
 
-const mockCron = cron as jest.Mocked<typeof cron>;
+const mockCron = vi.mocked(cron);
 
 describe('EmailScheduler', () => {
   let scheduler: EmailScheduler;
-  let mockEmailMonitor: jest.Mocked<EmailMonitor>;
-  let mockCronJob: jest.Mocked<cron.ScheduledTask>;
+  let mockEmailMonitor: any;
+  let mockCronJob: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     mockEmailMonitor = {
-      start: jest.fn().mockResolvedValue(undefined),
-      checkForNewEmails: jest.fn().mockResolvedValue([]),
-      processWorkoutEmail: jest.fn().mockResolvedValue(undefined),
-      stop: jest.fn(),
-      isActive: jest.fn().mockReturnValue(false),
+      start: vi.fn().mockResolvedValue(undefined),
+      checkForNewEmails: vi.fn().mockResolvedValue([]),
+      processWorkoutEmail: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn(),
+      isActive: vi.fn().mockReturnValue(false),
       emailService: {} as any,
       filter: {} as any,
-      isRunning: jest.fn().mockReturnValue(false),
-      logEmailDetails: jest.fn(),
-      isWorkoutFile: jest.fn().mockReturnValue(false)
-    } as unknown as jest.Mocked<EmailMonitor>;
+      isRunning: vi.fn().mockReturnValue(false),
+      logEmailDetails: vi.fn(),
+      isWorkoutFile: vi.fn().mockReturnValue(false)
+    } as any;
     
     mockCronJob = {
-      start: jest.fn(),
-      stop: jest.fn(),
-      destroy: jest.fn()
-    } as unknown as jest.Mocked<cron.ScheduledTask>;
+      start: vi.fn(),
+      stop: vi.fn(),
+      destroy: vi.fn()
+    } as any;
 
-    (mockCron.schedule as jest.Mock).mockReturnValue(mockCronJob);
+    (mockCron.schedule as vi.Mock).mockReturnValue(mockCronJob);
 
     scheduler = new EmailScheduler(5, mockEmailMonitor);
   });
@@ -124,11 +125,11 @@ describe('EmailScheduler', () => {
 
   describe('startContinuousMonitoring', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should start email monitor and begin continuous checking', async () => {
@@ -145,7 +146,7 @@ describe('EmailScheduler', () => {
       scheduler.startContinuousMonitoring();
       
       // Allow initial execution
-      jest.runOnlyPendingTimers();
+      vi.runOnlyPendingTimers();
       await Promise.resolve();
       
       expect(mockEmailMonitor.start).toHaveBeenCalled();
@@ -165,7 +166,7 @@ describe('EmailScheduler', () => {
       scheduler.startContinuousMonitoring();
       
       // Allow initial execution
-      jest.runOnlyPendingTimers();
+      vi.runOnlyPendingTimers();
       await Promise.resolve();
       
       // Should not throw, just log the error
