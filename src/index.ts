@@ -3,6 +3,9 @@ import { EmailScheduler } from './services/scheduler';
 import { EmailConfig } from './types/email';
 import logger from './utils/logger';
 import { EmailProvider } from './types/email';
+import { GmailService } from './services/gmailService';
+import { OutlookService } from './services/outlookService';
+import { EmailMonitor } from './services/emailMonitor';
 
 dotenv.config();
 
@@ -46,9 +49,21 @@ export async function main(): Promise<void> {
     
     const config = createEmailConfig();
     const intervalMinutes = parseInt(process.env.MONITOR_INTERVAL_MINUTES || '5', 10);
+    let emailService;
     
-    const scheduler = new EmailScheduler(config, intervalMinutes);
+    if (config.provider === 'gmail') {
+      emailService = new GmailService(config);
+    }
+    else if (config.provider === 'outlook') {
+      emailService = new OutlookService(config);
+    }
+    else {
+      logger.error('Failed to configure email service, ensure EMAIL_PROVIDER is set to "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"');
+      process.exit(1);
+    }
     
+    const emailMonitor = new EmailMonitor(config, emailService);
+    const scheduler = new EmailScheduler(intervalMinutes, emailMonitor);
     const mode = process.env.MODE || 'scheduled';
     
     switch (mode) {

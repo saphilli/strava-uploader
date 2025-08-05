@@ -1,547 +1,215 @@
-import { EmailService } from '../services/emailService';
-import { EmailConfig, EmailProvider, EmailFilter } from '../types/email';
-import fs from 'fs';
-import { google } from 'googleapis';
-import { authenticate } from '@google-cloud/local-auth';
-import Imap from 'imap';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { GmailService } from '../services/gmailService';
+import { BaseEmailService } from '../services/emailService';
+import { EmailConfig, EmailProvider } from '../types/email';
+import { ClientRequest, IncomingMessage } from 'http';
+import https from 'https';
 
-// Mock dependencies
-jest.mock('googleapis');
-jest.mock('@google-cloud/local-auth');
-jest.mock('fs');
-jest.mock('imap');
-
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockGoogle = google as jest.Mocked<typeof google>;
-const mockAuthenticate = authenticate as jest.MockedFunction<typeof authenticate>;
-const mockImap = Imap as jest.MockedClass<typeof Imap>;
+vi.mock('https');
+const mockHttps = vi.mocked(https);
 
 describe('EmailService', () => {
-  let emailService: EmailService;
+  const testDomain = 'mywellness.com';
+  const testEmail = 'test@gmail.com';
+
   let mockConfig: EmailConfig;
-  let mockGmailApi: any;
-  let mockImapInstance: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    
+    vi.clearAllMocks();
+        
     mockConfig = {
       provider: EmailProvider.Gmail,
-      email: 'test@gmail.com',
-      domain: 'mywellness.com'
+      email: testEmail,
+      domain: testDomain
     };
-    
-    // Mock Gmail API
-    mockGmailApi = {
-      users: {
-        getProfile: jest.fn().mockResolvedValue({ data: { emailAddress: 'test@gmail.com' } }),
-        messages: {
-          list: jest.fn().mockResolvedValue({ data: { messages: [] } }),
-          get: jest.fn().mockResolvedValue({ data: {} }),
-          attachments: {
-            get: jest.fn().mockResolvedValue({ data: { data: 'dGVzdCBkYXRh' } })
-          }
-        }
-      }
-    };
-    
-    mockGoogle.gmail.mockReturnValue(mockGmailApi);
-    mockGoogle.auth = {
-      OAuth2: jest.fn().mockImplementation(() => ({
-        setCredentials: jest.fn(),
-        gaxios: { defaults: {} }
-      }))
-    } as any;
-    
-    // Mock IMAP instance
-    mockImapInstance = {
-      once: jest.fn(),
-      connect: jest.fn(),
-      end: jest.fn(),
-      openBox: jest.fn(),
-      search: jest.fn()
-    };
-    
-    mockImap.mockImplementation(() => mockImapInstance);
-    
-    emailService = new EmailService(mockConfig);
   });
 
-  describe('constructor', () => {
-    it('should create EmailService instance with Gmail provider', () => {
-      expect(emailService).toBeInstanceOf(EmailService);
-    });
+  describe('BaseEmailService - downloadWorkoutFile', () => {
+    const url = 'https://example.com/workout.tcx';
 
-    it('should create EmailService instance with Outlook provider', () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
+    let eventListeners: { [key: string]: Function };
+    let baseService: BaseEmailService;
+    let mockResponse: Partial<IncomingMessage>;
+    let mockRequest: Partial<ClientRequest>;
+
+    beforeEach(() => {
+      baseService = new GmailService(mockConfig);
+      eventListeners = {};
+
+      mockResponse = {
+        on: vi.fn().mockImplementation((event: string, callback: Function) => {
+          eventListeners[event] = callback;
+        }),
+        statusCode: 200,
+        headers: { 'content-disposition': 'attachment; filename="workout.tcx"'}
+      } as Partial<IncomingMessage>;
+
+      mockRequest = {
+        on: vi.fn(),
+        setTimeout: vi.fn(),
+        destroy: vi.fn()
+      } as Partial<ClientRequest>;
+      
+      mockHttps.get.mockImplementation((_: any, callback?: any) => {
+        if (callback) {
+          callback(mockResponse);
         }
-      };
-      
-      const outlookService = new EmailService(outlookConfig);
-      expect(outlookService).toBeInstanceOf(EmailService);
-    });
-  });
-
-  describe('connect', () => {
-    it('should throw error for Gmail without credentials.json', async () => {
-      mockFs.existsSync.mockReturnValue(false);
-      
-      await expect(emailService.connect()).rejects.toThrow(
-        'credentials.json file not found'
-      );
-    });
-
-    it('should connect to Gmail successfully with existing token', async () => {
-      const mockCredentials = {
-        installed: {
-          client_id: 'test-client-id',
-          client_secret: 'test-client-secret',
-          redirect_uris: ['http://localhost']
-        }
-      };
-      const mockToken = { access_token: 'test-token', refresh_token: 'test-refresh' };
-      
-      mockFs.existsSync.mockImplementation((path: any) => {
-        if (path.includes('credentials.json')) return true;
-        if (path.includes('token.json')) return true;
-        return false;
+        return mockRequest as ClientRequest;
       });
-      mockFs.readFileSync.mockImplementation((path: any) => {
-        if (path.includes('credentials.json')) return JSON.stringify(mockCredentials);
-        if (path.includes('token.json')) return JSON.stringify(mockToken);
-        return '';
-      });
-      
-      await emailService.connect();
-      
-      expect(mockGmailApi.users.getProfile).toHaveBeenCalledWith({ userId: 'me' });
     });
 
-    it('should connect to Gmail successfully with new authentication', async () => {
-      const mockCredentials = {
-        web: {
-          client_id: 'test-client-id',
-          client_secret: 'test-client-secret',
-          redirect_uris: ['http://localhost']
-        }
-      };
-      const mockAuth = {
-        credentials: { access_token: 'new-token' },
-        gaxios: { defaults: {} }
-      };
+    it('should download file successfully via HTTPS', async () => {
+      const testData = [ 
+        Buffer.from('<tcx><workout>'),
+        Buffer.from('</workout></tcx>')
+      ];
       
-      mockFs.existsSync.mockImplementation((path: any) => {
-        if (path.includes('credentials.json')) return true;
-        if (path.includes('token.json')) return false;
-        return false;
-      });
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockFs.writeFileSync.mockImplementation();
-      mockAuthenticate.mockResolvedValue(mockAuth as any);
-      
-      await emailService.connect();
-      
-      expect(mockAuthenticate).toHaveBeenCalled();
-      expect(mockFs.writeFileSync).toHaveBeenCalled();
-      expect(mockGmailApi.users.getProfile).toHaveBeenCalledWith({ userId: 'me' });
-    });
+      const promise = baseService.downloadWorkoutFile(url);
 
-    it('should throw error for invalid credentials.json', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify({ invalid: 'credentials' }));
-      
-      // The error will be a destructuring error since installed/web are undefined
-      await expect(emailService.connect()).rejects.toThrow();
-    });
+      // Simulate data events after listeners are registered
+      testData.forEach(chunk => eventListeners['data'](chunk));
+      eventListeners['end']();
 
-    it('should throw error for incomplete credentials.json', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify({ 
-        installed: { 
-          client_id: 'test',
-          // missing client_secret and redirect_uris
-        }
-      }));
+      const result = await promise;
       
-      await expect(emailService.connect()).rejects.toThrow(
-        'Invalid or incomplete credentials.json file'
-      );
+      expect(result.filename).toBe('workout.tcx');
+      expect(result.data.toString()).toBe('<tcx><workout></workout></tcx>');
+      expect(https.get).toHaveBeenCalledWith(url, expect.any(Function));
     });
-
-    it('should connect to Outlook successfully', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
-        }
-      };
+    
+    it('should handle HTTP redirects', async () => {
+      const testData = [ 
+        Buffer.from('<tcx><workout>'),
+        Buffer.from('</workout></tcx>')
+      ];
+      const redirectUrl = 'https://cdn.example.com/workout.tcx';
       
-      const outlookService = new EmailService(outlookConfig);
-      
-      // Mock IMAP ready event
-      mockImapInstance.once.mockImplementation((event: string, callback: () => void) => {
-        if (event === 'ready') {
-          setTimeout(callback, 0);
-        }
+      // set up mock redirect response followed by succcess
+      let callCount = 0;
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callCount++;
+        const response = callCount === 1 
+        ? { ...mockResponse, statusCode: 302, headers: { location: redirectUrl } }
+        : { ...mockResponse, statusCode: 200 };
+        
+        callback(response);
+        return mockRequest as ClientRequest;
       });
       
-      await outlookService.connect();
+      let promise = baseService.downloadWorkoutFile(url);
+      testData.forEach(chunk => eventListeners['data'](chunk));
+      eventListeners['end']();
+      const result = await promise;
       
-      expect(mockImapInstance.connect).toHaveBeenCalled();
+      expect(result.filename).toBe('workout.tcx');
+      expect(result.data.toString()).toEqual('<tcx><workout></workout></tcx>');
+      expect(mockHttps.get).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle Outlook connection error', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
-        }
-      };
+    it('should handle HTTP errors', async () => {      
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback({ ...mockResponse, statusCode: 404 });
+        return mockRequest as ClientRequest;
+      });
       
-      const outlookService = new EmailService(outlookConfig);
-      const error = new Error('Connection failed');
-      
-      mockImapInstance.once.mockImplementation((event: string, callback: (err?: Error) => void) => {
+      await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Failed to download file: HTTP 404');
+    });
+
+    it('should reject on missing URL parameter', async () => {
+      await expect(baseService.downloadWorkoutFile('')).rejects.toThrow('URL is required to download workout file');
+    });
+
+    it('should handle network errors on response', async () => {
+      const error = new Error('Network error');
+      mockResponse.on = vi.fn().mockImplementation((event: string, callback: (error: Error) => void) => {
         if (event === 'error') {
-          setTimeout(() => callback(error), 0);
+          callback(error);
         }
       });
       
-      await expect(outlookService.connect()).rejects.toThrow('Connection failed');
+      await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Network error');
     });
 
-    it('should throw error for Outlook without auth config', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com'
-      };
-      
-      const outlookService = new EmailService(outlookConfig);
-      
-      await expect(outlookService.connect()).rejects.toThrow(
-        'OAuth configuration is required for Outlook'
-      );
-    });
-  });
-
-  describe('getMessages', () => {
-    it('should throw error when gmail is not initialized', async () => {
-      await expect(emailService.getMessages({
-        fromDomain: 'test.com',
-        hasAttachments: true
-      })).rejects.toThrow('Gmail service not initialized. Call connect() first.');
-    });
-
-    it('should fetch Gmail messages successfully', async () => {
-      // Setup Gmail connection
-      const mockCredentials = {
-        installed: {
-          client_id: 'test-client-id',
-          client_secret: 'test-client-secret',
-          redirect_uris: ['http://localhost']
-        }
-      };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
-      
-      await emailService.connect();
-      
-      // Setup message data
-      const mockMessages = [{ id: 'msg1' }];
-      const mockFullMessage = {
-        data: {
-          id: 'msg1',
-          payload: {
-            headers: [
-              { name: 'From', value: 'test@mywellness.com' },
-              { name: 'Subject', value: 'Test Subject' },
-              { name: 'Date', value: '2025-01-01T00:00:00Z' }
-            ],
-            parts: [
-              {
-                filename: 'workout.tcx',
-                mimeType: 'text/xml',
-                body: { size: 1024, attachmentId: 'att1' }
-              }
-            ]
-          }
-        }
-      };
-      
-      mockGmailApi.users.messages.list.mockResolvedValue({ data: { messages: mockMessages } });
-      mockGmailApi.users.messages.get.mockResolvedValue(mockFullMessage);
-      
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      const result = await emailService.getMessages(filter);
-      
-      expect(result).toHaveLength(1);
-      expect(result[0].from).toBe('test@mywellness.com');
-      expect(result[0].subject).toBe('Test Subject');
-      expect(result[0].hasAttachments).toBe(true);
-      expect(result[0].attachments).toHaveLength(1);
-    });
-
-    it('should return empty array when no Gmail messages found', async () => {
-      // Setup Gmail connection
-      const mockCredentials = {
-        installed: {
-          client_id: 'test-client-id',
-          client_secret: 'test-client-secret',
-          redirect_uris: ['http://localhost']
-        }
-      };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
-      
-      await emailService.connect();
-      
-      mockGmailApi.users.messages.list.mockResolvedValue({ data: {} });
-      
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      const result = await emailService.getMessages(filter);
-      
-      expect(result).toEqual([]);
-    });
-
-    it('should handle Gmail API errors', async () => {
-      // Setup Gmail connection
-      const mockCredentials = {
-        installed: {
-          client_id: 'test-client-id',
-          client_secret: 'test-client-secret',
-          redirect_uris: ['http://localhost']
-        }
-      };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
-      
-      await emailService.connect();
-      
-      const error = new Error('API Error');
-      mockGmailApi.users.messages.list.mockRejectedValue(error);
-      
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      await expect(emailService.getMessages(filter)).rejects.toThrow('API Error');
-    });
-
-    it('should fetch Outlook messages successfully', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
-        }
-      };
-      
-      const outlookService = new EmailService(outlookConfig);
-      
-      // Mock IMAP methods
-      mockImapInstance.once.mockImplementation((event: string, callback: () => void) => {
-        if (event === 'ready') setTimeout(callback, 0);
-      });
-      mockImapInstance.openBox.mockImplementation((box: string, readOnly: boolean, callback: (err?: Error) => void) => {
-        setTimeout(() => callback(), 0);
-      });
-      mockImapInstance.search.mockImplementation((criteria: any, callback: (err?: Error, results?: any[]) => void) => {
-        setTimeout(() => callback(undefined, []), 0);
+    it('should handle timeout', async () => {
+      mockRequest.setTimeout = vi.fn().mockImplementation((timeout: number, callback: () => void) => {
+        setTimeout(callback, 0);
       });
       
-      await outlookService.connect();
-      
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      const result = await outlookService.getMessages(filter);
-      
-      expect(result).toEqual([]);
-      expect(mockImapInstance.openBox).toHaveBeenCalledWith('INBOX', true, expect.any(Function));
+      await expect(baseService.downloadWorkoutFile(url)).rejects.toThrow('Download of workout file timed out');
+      expect(mockRequest.destroy).toHaveBeenCalled();
     });
 
-    it('should handle Outlook IMAP errors', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
-        }
-      };
+    it('should extract filename from URL path when no Content-Disposition', async () => {
+      const testData = Buffer.from('test workout data');
+      const url = 'https://example.com/path/to/myworkout.tcx';
       
-      const outlookService = new EmailService(outlookConfig);
-      
-      // Mock IMAP methods with error
-      mockImapInstance.once.mockImplementation((event: string, callback: () => void) => {
-        if (event === 'ready') setTimeout(callback, 0);
-      });
-      mockImapInstance.openBox.mockImplementation((box: string, readOnly: boolean, callback: (err?: Error) => void) => {
-        setTimeout(() => callback(new Error('IMAP Error')), 0);
+      mockResponse.headers = {};
+      mockResponse.statusCode = 200;
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback(mockResponse);
+        return mockRequest as ClientRequest;
       });
       
-      await outlookService.connect();
-      
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      await expect(outlookService.getMessages(filter)).rejects.toThrow('IMAP Error');
-    });
-
-    it('should handle Outlook IMAP not initialized error', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
+      (mockResponse.on as any).mockImplementation((event: string, callback: (data?: Buffer) => void) => {
+        if (event === 'data') {
+          callback(testData);
+        } else if (event === 'end') {
+          callback();
         }
-      };
-      
-      const outlookService = new EmailService(outlookConfig);
-      
-      // Don't connect, so IMAP is not initialized
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      await expect(outlookService.getMessages(filter)).rejects.toThrow('IMAP not initialized');
-    });
-
-    it('should handle Outlook IMAP search error', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
-        }
-      };
-      
-      const outlookService = new EmailService(outlookConfig);
-      
-      // Mock IMAP methods with search error
-      mockImapInstance.once.mockImplementation((event: string, callback: () => void) => {
-        if (event === 'ready') setTimeout(callback, 0);
-      });
-      mockImapInstance.openBox.mockImplementation((box: string, readOnly: boolean, callback: (err?: Error) => void) => {
-        setTimeout(() => callback(), 0);
-      });
-      mockImapInstance.search.mockImplementation((criteria: any, callback: (err?: Error, results?: any[]) => void) => {
-        setTimeout(() => callback(new Error('Search Error')), 0);
       });
       
-      await outlookService.connect();
+      const result = await baseService.downloadWorkoutFile(url);
       
-      const filter: EmailFilter = { fromDomain: 'mywellness.com', hasAttachments: true };
-      await expect(outlookService.getMessages(filter)).rejects.toThrow('Search Error');
+      expect(result.filename).toBe('myworkout.tcx');
+      expect(result.data).toEqual(testData);
     });
 
-    it('should return empty array for unknown provider', async () => {
-      // Create a service with an unknown provider by casting
-      const unknownConfig = {
-        provider: 'unknown' as any,
-        email: 'test@unknown.com',
-        domain: 'test.com'
-      };
-      const unknownService = new EmailService(unknownConfig);
+    it('should use custom filename when provided', async () => {
+      const testData = Buffer.from('test workout data');
+      const url = 'https://example.com/download';
+      const customFilename = 'my-custom-workout.tcx';
       
-      const filter: EmailFilter = { fromDomain: 'test.com', hasAttachments: true };
-      const result = await unknownService.getMessages(filter);
-      
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('downloadAttachment', () => {
-    it('should download Gmail attachment successfully', async () => {
-      // Setup Gmail connection
-      const mockCredentials = {
-        installed: {
-          client_id: 'test-client-id',
-          client_secret: 'test-client-secret',
-          redirect_uris: ['http://localhost']
-        }
-      };
-      mockFs.existsSync.mockImplementation((path: any) => path.includes('credentials.json'));
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockAuthenticate.mockResolvedValue({ credentials: {}, gaxios: { defaults: {} } } as any);
-      
-      await emailService.connect();
-      
-      const result = await emailService.downloadAttachment('msg1', 'att1');
-      
-      expect(result).toEqual(Buffer.from('test data'));
-      expect(mockGmailApi.users.messages.attachments.get).toHaveBeenCalledWith({
-        userId: 'me',
-        messageId: 'msg1',
-        id: 'att1'
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback(mockResponse);
+        return mockRequest as ClientRequest;
       });
-    });
-
-    it('should throw error for non-Gmail provider', async () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
+      
+      mockResponse.on = vi.fn().mockImplementation((event: string, callback: (data?: Buffer) => void) => {
+        if (event === 'data') {
+          callback(testData);
+        } else if (event === 'end') {
+          callback();
         }
-      };
+      });
       
-      const outlookService = new EmailService(outlookConfig);
+      const result = await baseService.downloadWorkoutFile(url, 100, customFilename);
       
-      await expect(outlookService.downloadAttachment('msg1', 'att1')).rejects.toThrow(
-        'Attachment download not implemented for this provider'
-      );
-    });
-  });
-
-  describe('disconnect', () => {
-    it('should disconnect without errors when no IMAP connection', () => {
-      expect(() => emailService.disconnect()).not.toThrow();
+      expect(result.filename).toBe(customFilename);
+      expect(result.data).toEqual(testData);
     });
 
-    it('should disconnect IMAP connection for Outlook', () => {
-      const outlookConfig: EmailConfig = {
-        provider: EmailProvider.Outlook,
-        email: 'test@outlook.com',
-        domain: 'mywellness.com',
-        auth: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token'
+    it('should add .tcx extension if missing from extracted filename', async () => {
+      const testData = Buffer.from('test workout data');
+      const url = 'https://example.com/path/to/myworkout';
+      mockResponse.headers = {'content-disposition': 'attachment; filename="myworkout"'};
+      
+      mockHttps.get.mockImplementation((_, callback?: any) => {
+        callback(mockResponse);
+        return mockRequest as ClientRequest;
+      });
+      
+      mockResponse.on = vi.fn().mockImplementation((event: string, callback: (data?: Buffer) => void) => {
+        if (event === 'data') {
+          setTimeout(() => callback(testData), 0);
+        } else if (event === 'end') {
+          setTimeout(() => callback(), 0);
         }
-      };
+      });
       
-      const outlookService = new EmailService(outlookConfig);
+      const result = await baseService.downloadWorkoutFile(url);
       
-      // Simulate having an IMAP connection
-      (outlookService as any).imap = mockImapInstance;
-      
-      outlookService.disconnect();
-      
-      expect(mockImapInstance.end).toHaveBeenCalled();
+      expect(result.filename).toBe('myworkout.tcx');
+      expect(result.data).toEqual(testData);
     });
   });
 });
