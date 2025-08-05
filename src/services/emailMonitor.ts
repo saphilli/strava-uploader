@@ -74,7 +74,7 @@ export class EmailMonitor {
     async processWorkoutEmail(message: EmailMessage): Promise<void> {
       logger.info(`Processing workout email: ${message.subject}`);
 
-      const workoutFile = await this.emailService.downloadWorkoutFile(message.downloadLinks[0], 30000, message.id);
+      await this.emailService.downloadWorkoutFile(message.downloadLinks[0], 30000, message.id);
 
       //TDO: Implement workout file processing logic
     }

@@ -3,7 +3,7 @@ import { GmailService } from '../services/gmailService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider, EmailFilter } from '../types/email';
 import fs from 'fs';
-import { gmail_v1, google } from 'googleapis';
+import { google } from 'googleapis';
 import { authenticate } from '@google-cloud/local-auth';
 
 // Mock dependencies
@@ -136,7 +136,7 @@ describe('GmailService', () => {
         return false;
       });
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockCredentials));
-      mockFs.writeFileSync.mockImplementation();
+      mockFs.writeFileSync.mockImplementation(() => {});
       mockAuthenticate.mockResolvedValue(mockAuth as Awaited<ReturnType<typeof authenticate>>);
       
       await gmailService.connect();

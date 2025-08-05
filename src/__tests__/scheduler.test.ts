@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EmailScheduler } from '../services/scheduler';
-import { EmailMonitor } from '../services/emailMonitor';
 import * as cron from 'node-cron';
+import { EmailMonitor } from '../services/emailMonitor';
+import { IEmailService } from '../services/emailService';
 
 // Mock dependencies
 vi.mock('../services/emailMonitor');
@@ -13,8 +14,8 @@ const mockCron = vi.mocked(cron);
 
 describe('EmailScheduler', () => {
   let scheduler: EmailScheduler;
-  let mockEmailMonitor: any;
-  let mockCronJob: any;
+  let mockEmailMonitor: Partial<EmailMonitor>;
+  let mockCronJob: Partial<cron.ScheduledTask>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -25,20 +26,20 @@ describe('EmailScheduler', () => {
       processWorkoutEmail: vi.fn().mockResolvedValue(undefined),
       stop: vi.fn(),
       isActive: vi.fn().mockReturnValue(false),
-      emailService: {} as any,
+      emailService: {} as IEmailService,
       filter: {} as any,
       isRunning: vi.fn().mockReturnValue(false),
       logEmailDetails: vi.fn(),
       isWorkoutFile: vi.fn().mockReturnValue(false)
-    } as any;
+    } as Partial<EmailMonitor>;
     
     mockCronJob = {
       start: vi.fn(),
       stop: vi.fn(),
       destroy: vi.fn()
-    } as any;
+    } as Partial<cron.ScheduledTask>;
 
-    (mockCron.schedule as vi.Mock).mockReturnValue(mockCronJob);
+    mockCron.schedule = vi.fn().mockReturnValue(mockCronJob);
 
     scheduler = new EmailScheduler(5, mockEmailMonitor);
   });

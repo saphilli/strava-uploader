@@ -21,7 +21,7 @@ describe('EmailMonitor', () => {
     };
     
     mockEmailService = {
-      connect: vi.fn().mockResolvedValue(undefined),
+      connect: vi.fn(),
       disconnect: vi.fn(),
       getMessages: vi.fn().mockResolvedValue([
         {
@@ -43,7 +43,7 @@ describe('EmailMonitor', () => {
         filename: 'workout.tcx', 
         data: Buffer.from('test workout data')
       }),
-      processWorkoutEmail: vi.fn().mockResolvedValue(undefined)
+      processWorkoutEmail: vi.fn()
     } as IEmailService;
     
     emailMonitor = new EmailMonitor(mockConfig, mockEmailService);
@@ -80,7 +80,7 @@ describe('EmailMonitor', () => {
 
     it('should throw error when email service connection fails', async () => {
       const error = new Error('Connection failed');
-      (mockEmailService.connect as vi.Mock).mockRejectedValue(error);
+      mockEmailService.connect = vi.fn().mockRejectedValue(error);
       
       await expect(emailMonitor.start()).rejects.toThrow('Connection failed');
       expect(emailMonitor.isActive()).toBe(false);
@@ -137,7 +137,7 @@ describe('EmailMonitor', () => {
 
     it('should return empty array when no emails found', async () => {
       emailMonitor['isRunning'] = true;
-      (mockEmailService.getMessages as vi.Mock).mockResolvedValue([]);
+      mockEmailService.getMessages = vi.fn().mockResolvedValue([]);
       
       const result = await emailMonitor.checkForNewEmails();
       
@@ -167,7 +167,7 @@ describe('EmailMonitor', () => {
         }
       ];
       
-      (mockEmailService.getMessages as vi.Mock).mockResolvedValue(mockMessages);
+      mockEmailService.getMessages = vi.fn().mockResolvedValue(mockMessages);
       
       const result = await emailMonitor.checkForNewEmails();
       
@@ -179,7 +179,7 @@ describe('EmailMonitor', () => {
     it('should handle errors from email service', async () => {
       emailMonitor['isRunning'] = true;
       const error = new Error('Service error');
-      (mockEmailService.getMessages as vi.Mock).mockRejectedValue(error);
+      mockEmailService.getMessages = vi.fn().mockRejectedValue(error);
       
       await expect(emailMonitor.checkForNewEmails()).rejects.toThrow('Service error');
     });
@@ -202,7 +202,7 @@ describe('EmailMonitor', () => {
     });
 
     it('should handle download errors gracefully', async () => {
-      (mockEmailService.downloadWorkoutFile as vi.Mock).mockRejectedValue(new Error('Download failed'));
+      mockEmailService.downloadWorkoutFile = vi.fn().mockRejectedValue(new Error('Download failed'));
       
       await expect(emailMonitor.processWorkoutEmail(mockMessage)).rejects.toThrow('Download failed');
       expect(mockEmailService.downloadWorkoutFile).toHaveBeenCalled();

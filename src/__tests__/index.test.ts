@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EmailMonitor } from '../services/emailMonitor';
 import { EmailScheduler } from '../services/scheduler';
 import { EmailProvider } from '../types/email';
@@ -27,7 +27,7 @@ describe('index.ts', () => {
     mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     
     // Mock console.log to avoid noise in tests
-    mockConsoleLog = vi.spyOn(console, 'log').mockImplementation();
+    mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
     
     // Create mock scheduler instance
     mockScheduler = {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, type MockedObject } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GmailService } from '../services/gmailService';
 import { BaseEmailService } from '../services/emailService';
 import { EmailConfig, EmailProvider } from '../types/email';
