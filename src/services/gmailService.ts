@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, Auth } from 'googleapis';
 import { gmail_v1 } from 'googleapis/build/src/apis/gmail/v1';
 import { authenticate } from '@google-cloud/local-auth';
 import fs from 'fs';
@@ -44,28 +44,26 @@ export class GmailService extends BaseEmailService {
         throw new Error('Invalid or incomplete credentials.json file. Ensure client_id, client_secret, and redirect_uris are present.')
       }
 
-      let auth;
+      let auth: Auth.OAuth2Client;
       if (fs.existsSync(TOKEN_PATH)) 
       {
         const tokenData = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-        const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-        oauth2Client.setCredentials(tokenData);
-        auth = oauth2Client;
+        auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        auth.setCredentials(tokenData);
       } 
       else {
-        auth = await authenticate({
+        let authenticatedClient = await authenticate({
           scopes: SCOPES,
           keyfilePath: CREDENTIALS_PATH,
         });
         
-        fs.writeFileSync(TOKEN_PATH, JSON.stringify(auth.credentials));
+        fs.writeFileSync(TOKEN_PATH, JSON.stringify(authenticatedClient.credentials));
+        
+        auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        auth.setCredentials(authenticatedClient.credentials);
       }
 
-      if (auth && auth.gaxios) {
-        auth.gaxios.defaults.errorRedactor = false;
-      }
-
-      this.gmail = google.gmail({ version: 'v1', auth });
+      this.gmail = google.gmail({ version: 'v1', auth});
     } catch (error)
     {
       logger.error('Failed to initialize Gmail OAuth:', error);
