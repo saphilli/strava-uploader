@@ -69,7 +69,7 @@ jobs:
         key: build-${{ runner.os }}-${{ github.sha }}
         
     - name: Run tests
-      run: npm run test:ci
+      run: npm run test
       env:
         NODE_OPTIONS: --max-old-space-size=4096
       

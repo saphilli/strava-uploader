@@ -8,10 +8,9 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
-    "test": "vitest --coverage",
-    "test:watch": "vitest --watch",
-    "test:ci": "vitest --ci --coverage --watchAll=false"
-  },
+    "test": "vitest run --coverage",
+    "test:watch": "vitest --watch"
+    },
   "keywords": [
     "strava",
     "technogym",
