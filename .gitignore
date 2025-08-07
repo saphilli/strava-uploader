@@ -6,6 +6,7 @@ logs/
 .DS_Store
 coverage/
 .nyc_output/
-token.json
-credentials.json
+credentials/token.json
+credentials/credentials.json
+credentials/strava-tokens.json
 test-results.xml

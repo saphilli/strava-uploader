@@ -28,8 +28,8 @@ export class GmailService extends BaseEmailService {
   private async initializeGmail(): Promise<void>
   {
     const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
-    const TOKEN_PATH = path.join(process.cwd(), 'token.json');
-    const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
+    const TOKEN_PATH = path.join(process.cwd(), 'credentials', 'token.json');
+    const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials', 'credentials.json');
 
     try {
       if (!fs.existsSync(CREDENTIALS_PATH))
@@ -44,22 +44,24 @@ export class GmailService extends BaseEmailService {
         throw new Error('Invalid or incomplete credentials.json file. Ensure client_id, client_secret, and redirect_uris are present.')
       }
 
-      let auth: Auth.OAuth2Client;
+      let auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+      let tokenData: any = null;
       if (fs.existsSync(TOKEN_PATH)) 
       {
-        const tokenData = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-        auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-        auth.setCredentials(tokenData);
+        tokenData = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
       } 
+      
+      if (tokenData && tokenData.access_token && tokenData.refresh_token) {
+        auth.setCredentials(tokenData);
+
+      }
       else {
         let authenticatedClient = await authenticate({
           scopes: SCOPES,
           keyfilePath: CREDENTIALS_PATH,
         });
         
-        fs.writeFileSync(TOKEN_PATH, JSON.stringify(authenticatedClient.credentials));
-        
-        auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        fs.writeFileSync(TOKEN_PATH, JSON.stringify(authenticatedClient.credentials));        
         auth.setCredentials(authenticatedClient.credentials);
       }
 
