@@ -1,6 +1,7 @@
-import { google, Auth } from 'googleapis';
+import { google } from 'googleapis';
 import { gmail_v1 } from 'googleapis/build/src/apis/gmail/v1';
 import { authenticate } from '@google-cloud/local-auth';
+import { Credentials } from 'google-auth-library';
 import fs from 'fs';
 import path from 'path';
 import logger from '../utils/logger';
@@ -45,13 +46,13 @@ export class GmailService extends BaseEmailService {
       }
 
       let auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-      let tokenData: any = null;
+      let tokenData: Credentials = {};
       if (fs.existsSync(TOKEN_PATH)) 
       {
         tokenData = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
       } 
       
-      if (tokenData && tokenData.access_token && tokenData.refresh_token) {
+      if (tokenData.access_token && tokenData.refresh_token) {
         auth.setCredentials(tokenData);
 
       }
