@@ -5,7 +5,7 @@ import { Credentials } from 'google-auth-library';
 import fs from 'fs';
 import path from 'path';
 import logger from '../utils/logger';
-import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
+import { EmailConfig, EmailMessage, EmailFilter } from '../../functions/gmail-listener/types/email';
 import { BaseEmailService } from './emailService'; 
 
 export class GmailService extends BaseEmailService {

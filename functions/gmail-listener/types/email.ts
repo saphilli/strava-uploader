@@ -1,6 +1,5 @@
 export enum EmailProvider {
-  Gmail = 'gmail',
-  Outlook = 'outlook'
+  Gmail = 'gmail'
 }
 
 export interface EmailConfig {
