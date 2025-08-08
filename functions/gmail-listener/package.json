@@ -1,0 +1,23 @@
+{
+  "name": "gmail-listener",
+  "version": "1.0.0",
+  "description": "Gmail listener for MyWellness emails",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "npm run build && gcloud functions deploy gmail-listener --source ./lib --runtime nodejs22 --trigger-topic gmail-notifications --region europe-west1",
+    "dev": "functions-framework --target=handleGmailNotification --source=lib"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^4.0.0",
+    "@google-cloud/pubsub": "^5.1.0",
+    "googleapis": "^155.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,5 +1,5 @@
 import { IEmailService } from './emailService';
-import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
+import { EmailConfig, EmailMessage, EmailFilter } from '../../functions/gmail-listener/types/email';
 import logger from '../utils/logger';
 
 export class EmailMonitor {

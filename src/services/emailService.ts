@@ -1,6 +1,6 @@
 import https from 'https';
 import logger from '../utils/logger';
-import { EmailConfig, EmailMessage, EmailFilter } from '../types/email';
+import { EmailConfig, EmailMessage, EmailFilter } from '../../functions/gmail-listener/types/email';
 
 export interface IEmailService {
   connect(): Promise<void>;

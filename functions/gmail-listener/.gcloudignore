@@ -1,0 +1,12 @@
+const gcloudIgnore = `
+node_modules/
+credentials/
+src/
+*.ts
+.env
+.env.local
+.git/
+.gitignore
+README.md
+tsconfig.json
+`;

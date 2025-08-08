@@ -1,5 +1,5 @@
 import * as cron from 'node-cron';
-import { EmailMonitor } from './emailMonitor';
+import { EmailMonitor } from '../services/emailMonitor';
 import logger from '../utils/logger';
 
 export class EmailScheduler {

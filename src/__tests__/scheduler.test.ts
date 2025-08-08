@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { EmailScheduler } from '../services/scheduler';
+import { EmailScheduler } from '../strava-uploader/scheduler';
 import * as cron from 'node-cron';
 import { EmailMonitor } from '../services/emailMonitor';
 import { IEmailService } from '../services/emailService';
