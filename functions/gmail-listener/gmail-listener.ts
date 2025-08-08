@@ -1,31 +1,25 @@
-import { CloudEvent, cloudEvent } from '@google-cloud/functions-framework';
+import { CloudEvent } from '@google-cloud/functions-framework';
 import { PubSub } from '@google-cloud/pubsub';
-import { EmailConfig, EmailMessage, EmailFilter } from 'types/email';
-
-interface GmailNotification {
-  emailAddress: string;
-  historyId: string;
-}
-
-interface WorkoutEmailEvent {
-  messageId: string;
-  timestamp: string;
-}
+import { EmailConfig } from './types/email';
+import { WorkoutEmailEvent, GmailNotification } from './types/events';
 
 const pubsub = new PubSub();
 const TOPIC_NAME = process.env.WORKOUT_EMAIL_TOPIC || 'workout-emails';
 
-const config = {
+const config: EmailConfig = {
+  email: process.env.EMAIL_ADDRESS || '',
+  domain: process.env.TECHNOGYM_DOMAIN || 'mywellness.com',
+  auth: {
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       refreshToken: process.env.GOOGLE_REFRESH_TOKEN || ''
-    } as EmailConfig
+    }
+  };
 
 /**
  * Cloud Function triggered by Gmail Pub/Sub notifications
  * Filters for emails from technogym domain and publishes message IDs to a topic
 */
-@cloudEvent('gmail-listener')
 export const handleGmailNotification = async (cloudEvent: CloudEvent<any>): Promise<void> => {
   try {
     console.log('Received Gmail notification:', cloudEvent.id);
@@ -52,7 +46,7 @@ export const handleGmailNotification = async (cloudEvent: CloudEvent<any>): Prom
     
   } catch (error) {
     console.error('Error processing Gmail notification:', error);
-    throw error; // This will trigger retry with exactly-once delivery
+    throw error; // trigger retry with exactly-once delivery
   }
 };
 
@@ -65,15 +59,15 @@ async function findWorkoutEmails(historyId: string): Promise<string[]> {
   const auth = new google.auth.GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
     credentials: {
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-      refresh_token: config.refreshToken
+      client_id: config.auth?.clientId,
+      client_secret: config.auth?.clientSecret,
+      refresh_token: config.auth?.refreshToken
     }
   });
   
-  if (!config.clientId || !config.clientSecret || !config.refreshToken) {
-  throw new Error('Missing required Gmail configuration (clientId, clientSecret, refreshToken). Check your environment variables.');
-}
+  if (!config.auth?.clientId || !config.auth?.clientSecret || !config.auth?.refreshToken) {
+    throw new Error('Missing required Gmail configuration (clientId, clientSecret, refreshToken). Check your environment variables.');
+  }
   const gmail = google.gmail({ version: 'v1', auth });
   
   try {
