@@ -10,11 +10,6 @@ dotenv.config();
 
 export function createEmailConfig(): EmailConfig {
   const providerStr = process.env.EMAIL_PROVIDER;
-  const validProviders = Object.values(EmailProvider);
-
-  if (!providerStr || !validProviders.includes(providerStr as EmailProvider)) {
-    throw new Error(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
-  }
   const provider = providerStr as EmailProvider;
 
   const config: EmailConfig = {
@@ -22,12 +17,6 @@ export function createEmailConfig(): EmailConfig {
     email: process.env.EMAIL_ADDRESS || '',
     domain: process.env.TECHNOGYM_DOMAIN || 'mywellness.com'
   };
-
- 
-    if (!config.email || !config.auth.clientId || !config.auth.clientSecret || !config.auth.refreshToken) {
-      throw new Error('Missing required Outlook configuration. Check your environment variables.');
-    }
-  }
 
   if (!config.email) {
     throw new Error('EMAIL_ADDRESS is required in environment variables.');

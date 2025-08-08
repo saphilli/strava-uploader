@@ -10,3 +10,10 @@ credentials/token.json
 credentials/credentials.json
 credentials/strava-tokens.json
 test-results.xml
+functions/gmail-listener/types/email.js
+.gitignore
+functions/gmail-listener/types/email.d.ts
+.gitignore
+functions/gmail-listener/types/email.d.ts.map
+.gitignore
+functions/gmail-listener/types/email.js.map
