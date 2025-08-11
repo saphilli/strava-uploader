@@ -1,21 +1,15 @@
 import dotenv from 'dotenv';
-import { EmailScheduler } from './services/scheduler';
-import { EmailConfig } from './types/email';
+import { EmailScheduler } from './strava-uploader/scheduler';
+import { EmailConfig } from '../functions/gmail-listener/types/email';
 import logger from './utils/logger';
-import { EmailProvider } from './types/email';
+import { EmailProvider } from '../functions/gmail-listener/types/email';
 import { GmailService } from './services/gmailService';
-import { OutlookService } from './services/outlookService';
 import { EmailMonitor } from './services/emailMonitor';
 
 dotenv.config();
 
 export function createEmailConfig(): EmailConfig {
   const providerStr = process.env.EMAIL_PROVIDER;
-  const validProviders = Object.values(EmailProvider);
-
-  if (!providerStr || !validProviders.includes(providerStr as EmailProvider)) {
-    throw new Error(`EMAIL_PROVIDER must be either "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"`);
-  }
   const provider = providerStr as EmailProvider;
 
   const config: EmailConfig = {
@@ -23,18 +17,6 @@ export function createEmailConfig(): EmailConfig {
     email: process.env.EMAIL_ADDRESS || '',
     domain: process.env.TECHNOGYM_DOMAIN || 'mywellness.com'
   };
-
-  if (provider === EmailProvider.Outlook) {
-    config.auth = {
-      clientId: process.env.OUTLOOK_CLIENT_ID || '',
-      clientSecret: process.env.OUTLOOK_CLIENT_SECRET || '',
-      refreshToken: process.env.OUTLOOK_REFRESH_TOKEN || ''
-    };
-    
-    if (!config.email || !config.auth.clientId || !config.auth.clientSecret || !config.auth.refreshToken) {
-      throw new Error('Missing required Outlook configuration. Check your environment variables.');
-    }
-  }
 
   if (!config.email) {
     throw new Error('EMAIL_ADDRESS is required in environment variables.');
@@ -53,9 +35,6 @@ export async function main(): Promise<void> {
     
     if (config.provider === 'gmail') {
       emailService = new GmailService(config);
-    }
-    else if (config.provider === 'outlook') {
-      emailService = new OutlookService(config);
     }
     else {
       logger.error('Failed to configure email service, ensure EMAIL_PROVIDER is set to "${EmailProvider.Gmail}" or "${EmailProvider.Outlook}"');

@@ -10,3 +10,4 @@ credentials/token.json
 credentials/credentials.json
 credentials/strava-tokens.json
 test-results.xml
+functions/gmail-listener/lib/

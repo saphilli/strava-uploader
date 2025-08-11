@@ -14,6 +14,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "functions/gmail-listener/types/email.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

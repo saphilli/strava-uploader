@@ -1,10 +1,4 @@
-export enum EmailProvider {
-  Gmail = 'gmail',
-  Outlook = 'outlook'
-}
-
 export interface EmailConfig {
-  provider: EmailProvider;
   domain: string;
   email: string;
   auth?: {
@@ -25,3 +19,4 @@ export interface EmailMessage {
 export interface EmailFilter {
   fromDomain: string;
 }
+
