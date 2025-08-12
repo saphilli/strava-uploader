@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { EmailScheduler } from './strava-uploader/scheduler';
-import { EmailConfig } from '../functions/gmail-listener/types/email';
+import { EmailConfig } from '../functions/gmail-listener/src/types/email';
 import logger from './utils/logger';
-import { EmailProvider } from '../functions/gmail-listener/types/email';
-import { GmailService } from './services/gmailService';
+import { EmailProvider } from '../functions/gmail-listener/src/types/email';
+import { GmailService } from '../functions/gmail-listener/src/gmailRefreshTokenService';
 import { EmailMonitor } from './services/emailMonitor';
 
 dotenv.config();

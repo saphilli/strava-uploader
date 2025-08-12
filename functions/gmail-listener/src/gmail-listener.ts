@@ -1,20 +1,16 @@
+import { google } from 'googleapis';
 import { CloudEvent } from '@google-cloud/functions-framework';
 import { PubSub } from '@google-cloud/pubsub';
+import { initializeEmailConfig } from './configuration';
 import { EmailConfig } from './types/email';
 import { WorkoutEmailEvent, GmailNotification } from './types/events';
+import { GoogleAuth } from 'google-auth-library';
+import { authenticate } from '@google-cloud/local-auth';
 
 const pubsub = new PubSub();
-const TOPIC_NAME = process.env.WORKOUT_EMAIL_TOPIC || 'workout-emails';
-
-const config: EmailConfig = {
-  email: process.env.EMAIL_ADDRESS || '',
-  domain: process.env.TECHNOGYM_DOMAIN || 'mywellness.com',
-  auth: {
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN || ''
-    }
-  };
+const topicName = process.env.WORKOUT_EMAIL_TOPIC || 'workout-emails';
+const projectId = process.env.GOOGLE_CLOUD_PROJECT;
+const gmailSecretsKey = 'GMAIL_CREDENTIALS_JSON';
 
 /**
  * Cloud Function triggered by Gmail Pub/Sub notifications
@@ -50,25 +46,32 @@ export const handleGmailNotification = async (cloudEvent: CloudEvent<any>): Prom
   }
 };
 
-/**
- * Find new emails from technogym domain based on history ID
- */
-async function findWorkoutEmails(historyId: string): Promise<string[]> {
-  const { google } = await import('googleapis');
+export async function authenticateGmail(): Promise<GoogleAuth>{
+  const config: EmailConfig = initializeEmailConfig(gmailSecretsKey); 
   
   const auth = new google.auth.GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
     credentials: {
       client_id: config.auth?.clientId,
       client_secret: config.auth?.clientSecret,
-      refresh_token: config.auth?.refreshToken
+      refresh_token: config.auth?.refreshToken,
     }
   });
   
   if (!config.auth?.clientId || !config.auth?.clientSecret || !config.auth?.refreshToken) {
-    throw new Error('Missing required Gmail configuration (clientId, clientSecret, refreshToken). Check your environment variables.');
+    throw new Error('Missing required Gmail configuration' + 
+      '(clientId, clientSecret, refreshToken). Check your environment variables.');
   }
+
+  return auth;
+}
+/**
+ * Find new emails from technogym domain based on history ID
+ */
+export async function findWorkoutEmails(historyId: string): Promise<string[]> {
+  const auth = await authenticateGmail();
   const gmail = google.gmail({ version: 'v1', auth });
+  const config: EmailConfig = initializeEmailConfig(gmailSecretsKey);
   
   try {
     // Get history since the last notification
@@ -114,7 +117,8 @@ async function isFromTechnogym(gmail: any, messageId: string): Promise<boolean> 
     const fromHeader = headers.find((h: any) => h.name.toLowerCase() === 'from');
     const sender = fromHeader?.value?.toLowerCase() || '';
     
-    return sender.includes(config.domain);
+    const emailConfig: EmailConfig = initializeEmailConfig(gmailSecretsKey);
+    return sender.includes(emailConfig.domain);
     
   } catch (error) {
     console.error(`Error checking message ${messageId}:`, error);
@@ -126,7 +130,7 @@ async function isFromTechnogym(gmail: any, messageId: string): Promise<boolean> 
  * Publish empty event with message ID to processing topic
  */
 async function publishWorkoutEmailEvent(messageId: string): Promise<void> {
-  const topic = pubsub.topic(TOPIC_NAME);
+  const topic = pubsub.topic(topicName);
   
   const workoutEmailEvent: WorkoutEmailEvent = {
     messageId,

@@ -6,8 +6,6 @@ logs/
 .DS_Store
 coverage/
 .nyc_output/
-credentials/token.json
-credentials/credentials.json
-credentials/strava-tokens.json
+**/*/credentials
 test-results.xml
 functions/gmail-listener/lib/
