@@ -14,6 +14,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*", "functions/gmail-listener/types/email.ts"],
+  "include": ["src/**/*", "functions/gmail-listener/src/types/email.ts", "functions/gmail-listener/src/gmailRefreshTokenService.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

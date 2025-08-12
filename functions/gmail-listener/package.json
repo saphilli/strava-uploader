@@ -11,6 +11,8 @@
   "dependencies": {
     "@google-cloud/functions-framework": "^4.0.0",
     "@google-cloud/pubsub": "^5.1.0",
+    "@google-cloud/secret-manager": "^5.1.0",
+    "dotenv": "^16.4.7",
     "googleapis": "^155.0.0"
   },
   "devDependencies": {

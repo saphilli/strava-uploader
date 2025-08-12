@@ -20,6 +20,20 @@
          {
             "type": "node",
             "request": "launch",
+            "name": "Launch Gmail Listener",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/functions/gmail-listener/lib/index.js",
+            "preLaunchTask": "tsc: build - functions/gmail-listener/tsconfig.json",
+            "outFiles": [
+                "${workspaceFolder}/functions/gmail-listener/lib/**/*.js"
+            ],
+            "cwd": "${workspaceFolder}/functions/gmail-listener"
+        },
+         {
+            "type": "node",
+            "request": "launch",
             "name": "Debug Jest Tests",
             "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
             "args": [

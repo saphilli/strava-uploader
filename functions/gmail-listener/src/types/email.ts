@@ -1,6 +1,5 @@
 export interface EmailConfig {
   domain: string;
-  email: string;
   auth?: {
     clientId: string;
     clientSecret: string;
